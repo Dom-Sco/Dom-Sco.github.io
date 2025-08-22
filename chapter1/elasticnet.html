@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 1.3: Elastic Net</title>
+  <meta name="description" content="A beginner-friendly guide to Elastic Net in machine learning." />
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+
+</head>
+<body>
+
+  <h1>Chapter 1.3: Elastic Net</h1>
+
+  <p>We can extend our linear model in a different way then we did in the previous tutorial by adding
+    L1 (lasso regression) and L2 (ridge regression) regularisation to the loss function. Our loss function then becomes:
+  </p>
+
+  <div class="math">\(\mathcal{L}(\beta)=\frac{1}{m}\left \lVert Y-X\beta \right \rVert^{2} + \lambda(\alpha\left \lVert \beta \right \rVert_{1} + (1-\alpha) \left \lVert \beta \right \rVert^{2})\)</div>
+  
+  <p>This is known as the elastic net (note we are now using MSE as a loss hence the \(\frac{1}{m}\) term, with m being the number of samples). Here \(\lambda>0\) is a hyperparameter that describes how much we want
+    the regularisation to influence our model and \(\alpha\in[0,1]\) is a term that balances between L1 and L2 regularisation.
+    When \(\alpha=1\) we get just the L1 term so it is equivalent to lasso regression, similarly when \(\alpha=0\) we get just the L2 term so it is equivalent to ridge regression.
+    
+  </p>
+
+  <p>In terms of an explict solution none exists except when \(\alpha=0\) due to the L1 regularisation
+    (absolute value function is not differentiable at 0). We can overcome this by using subgradients for the L1
+    regularisation term and using the gradient descent algorithm to find a solution (for absolute value the subgradient is the sign function
+    hence we can't rearrange for \(\beta\) when we set our gradient to 0). As the loss function is still
+    convex this solution will be unique. The gradient of the loss function is: 
+  </p>
+
+  <div class="math">\(\nabla_{\beta}\mathcal{L}(\beta)=-\frac{2}{m}X^{T}(Y-X\beta)+\lambda\alpha\operatorname{sgn}(\beta)+2\lambda(1-\alpha)\beta\)</div>
+
+  <p>When \(\alpha=0\) the explict solution is:</p>
+
+  <div class="math">\(\hat{\beta}=(X^{T}X+\lambda I)^{-1}X^{T}Y\)</div>
+
+  <p>I won't derive the solution here, I'll leave that as an exercise but it's very similar to the derivation
+    for standard linear regression. With our gradient we can find the minimum through the usual update rule for
+    gradient descent:
+  </p>
+
+  <div class="math">\(\beta^{(t+1)}=\beta^{(t)}-\eta\nabla_{\beta}\mathcal{L}(\beta^{(t)})\)</div>
+
+  <p>Where \(\eta\) is the learning rate. Coding up our solution (making sure to calculate the explict solution when \(\alpha=0\))
+    we have:
+  </p>
+
+  <pre><code class="language-python">
+    import numpy as np
+
+    ratio = 0.8
+    strength = 0.2
+
+    def linear_model(X, beta):
+        return X @ beta
+
+
+    def elastic_net_loss(X, y, beta, l1_ratio=ratio, alpha=strength):
+        """
+        Compute the Elastic Net loss:
+        L(beta) = ||y - X beta||^2 + lambda * (alpha * ||beta||_1 + (1 - alpha) * ||beta||^2)
+
+        Parameters:
+            X : ndarray (n_samples, n_features)
+            y : ndarray (n_samples,)
+            beta : ndarray (n_features,)
+            l1_ratio : float, between 0 and 1 (mixing ratio between L1 and L2)
+            alpha : float, regularization strength
+
+        Returns:
+            loss : float
+        """
+        # Residual
+        residual = y - X @ beta
+
+        # Squared error
+        mse_term = np.sum(residual ** 2)
+
+        # L1 and L2 penalties
+        l1_term = np.sum(np.abs(beta))
+        l2_term = np.sum(beta ** 2)
+
+        # Elastic Net loss
+        loss = mse_term + alpha * (l1_ratio * l1_term + (1 - l1_ratio) * l2_term)
+        return loss
+
+
+    def elastic_net(X, y, alpha=strength, l1_ratio=ratio, lr=0.01, epochs=1000):
+        """
+        Elastic Net Regression using NumPy.
+        
+        Parameters:
+            X : ndarray of shape (n_samples, n_features)
+            y : ndarray of shape (n_samples,)
+            alpha : float, regularization strength (λ)
+            l1_ratio : float, mixing between L1 and L2 regularization (α)
+                    - l1_ratio = 0 => Ridge
+                    - l1_ratio = 1 => Lasso
+            lr : float, learning rate (used only if alpha > 0)
+            epochs : int, number of iterations for gradient descent (if alpha > 0)
+
+        Returns:
+            beta : ndarray of shape (n_features,), estimated coefficients
+        """
+
+        m, n = X.shape
+
+        # Special case: if l1_ratio = 0, use closed-form Ridge solution
+        if l1_ratio == 0:
+            I = np.eye(n)
+            beta = np.linalg.inv(X.T @ X + alpha * I) @ X.T @ y
+            return beta
+
+        # Otherwise, use gradient descent
+        beta = np.zeros(n)
+        lambda1 = alpha * l1_ratio      # L1 penalty
+        lambda2 = alpha * (1 - l1_ratio)  # L2 penalty
+
+        for _ in range(epochs):
+            y_pred = X @ beta
+            grad_mse = -2 * X.T @ (y - y_pred) / m
+            grad_l2 = 2 * lambda2 * beta
+            grad_l1 = lambda1 * np.sign(beta)
+            grad = grad_mse + grad_l2 + grad_l1
+            beta -= lr * grad
+
+        return beta
+  </code></pre>
+
+  <a href="https://colab.research.google.com/drive/15b6Ana96PSKmwQwVy3nGRpq0-47-17zC?usp=sharing" target="_blank">
+  <button>Open in Google Colab</button>
+  </a>
+
+  <p>In the linked colab file above we train it on the wine dataset to predict alcohol content of wine.
+    </p>
+
+  <p>This is all nice and good but why have we introduced regularisation to our linear regression model?
+    There are a few reasons for doing this, the first being to deal with multicollinearity between variables,
+    which means it is difficult to determine certain independent variables individual effect on the dependent
+    variable. This can lead to unreliable coeffecient estimates in the model. The other main reason to do this is to
+    introduce sparsity into our models (lots of 0 coeffecients). This aids in saving memory (don't need to store 0's) and lessening the amount
+    of operations we need to do when we evaluate our model. It reduces the operations because in the dot product / matrix multiplication (\(X\beta\)) all the 
+    0 coeffecients will multiply with the data to give 0 so we don't need a computer to calculate them. Below is a table that compares the different forms of regularisation.
+  </p>
+
+  <style>
+  .regression-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 40px 0;
+    font-family: "Georgia", serif;
+    font-size: 16px;
+    background-color: #fdfdfd;
+    border: 1px solid #ccc;
+  }
+
+  .regression-table th,
+  .regression-table td {
+    padding: 14px 20px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .regression-table th {
+    background-color: #007acc;
+    color: white;
+  }
+
+  .regression-table tr:hover {
+    background-color: #f0f8ff;
+  }
+
+  .regression-highlight {
+    font-weight: bold;
+    color: #007acc;
+  }
+</style>
+
+<table class="regression-table">
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Ridge Regression</th>
+      <th>Lasso Regression</th>
+      <th>Elastic Net</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Penalty Type</td>
+      <td><span class="regression-highlight">L2</span> (\( \lambda \|\beta\|^2 \))</td>
+      <td><span class="regression-highlight">L1</span> (\( \lambda \|\beta\|_1 \))</td>
+      <td><span class="regression-highlight">L1 + L2</span> (\( \lambda (\alpha \|\beta\|_1 + (1 - \alpha) \|\beta\|^2) \))</td>
+    </tr>
+    <tr>
+      <td>Sparsity</td>
+      <td>Does not produce sparse models</td>
+      <td>Encourages sparsity (feature selection)</td>
+      <td>Can produce sparsity depending on \( \alpha \)</td>
+    </tr>
+    <tr>
+      <td>Multicollinearity Handling</td>
+      <td>Handles well by shrinking coefficients</td>
+      <td>Poor handling, may arbitrarily select one feature</td>
+      <td>Handles better than Lasso due to L2 component</td>
+    </tr>
+    <tr>
+      <td>When to Use</td>
+      <td>Many small/medium effects; no need for feature selection</td>
+      <td>Only a few features matter; need variable selection</td>
+      <td>Mix of Lasso and Ridge behavior; flexible</td>
+    </tr>
+    <tr>
+      <td>Hyperparameters</td>
+      <td>\( \lambda \)</td>
+      <td>\( \lambda \)</td>
+      <td>\( \lambda \), \( \alpha \in [0, 1] \)</td>
+    </tr>
+    <tr>
+      <td>Closed-form Solution</td>
+      <td>✅ Yes</td>
+      <td>❌ No (requires optimization)</td>
+      <td>❌ No (requires optimization)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>One final thing to note is that these regularisation methods aren't exclusive to linear regression. We can add these
+  terms to any other models we may encounter.
+</p>
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="polynomialregression.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="../chapter2/classification.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>

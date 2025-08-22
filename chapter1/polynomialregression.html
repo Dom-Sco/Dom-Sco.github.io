@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 1.2: Polynomial Regression</title>
+  <meta name="description" content="A beginner-friendly guide to polynomial regression in machine learning." />
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+
+</head>
+<body>
+
+  <h1>Chapter 1.2: Polynomial Regression</h1>
+
+  <p>We can extend our linear model to be that of a degree m polynomial. In the problem setup we are again given n observations labelled \(X=(X_{1}, X_{2},...,X_{n})\) and n responses \(Y=(Y_{1},Y_{2},...,Y_{n})\). In this case we just have 2 dimensional data
+    where each \((X_{i},Y_{i})\) is a point in the plane. Hence our model is:
+  </p>
+
+  <div class="math">\(f(X_{i};\beta)=Y_i=\beta_0+\beta_1X_{i}+\beta_{2}X_{i}^{2}+...+\beta_{m}X_{i}^{m}\)</div>
+  
+  <p>Here \(\beta=(\beta_{0},...,\beta_{m})\) are constants that will have to be worked out so the model fits the data well. We again can do this
+    by applying our knowledge of regression. For this specific problem we use least squares as our lost function. So we
+    want to solve:
+  </p>
+
+  <div class="math">\(\hat{\beta}=\underset{\beta}{\mathrm{argmin}}\hspace{0.09cm}\sum_{i=0}^{n}\left(\beta X_{i}-Y_{i}\right)^{2}\)</div>
+
+  <p>We can now see that it is the exact same optimisation problem we encountered in linear regression. Remember we are taking the gradient with respect to \(\beta\) so we will have the same matrix as in linear regression but with each column i raised to the ith power
+    (the only difference in the solution are our variables will be raised to a power instead of being all linear). Hence our solution is:</p>
+
+  <div class="math">\(\hat{\beta}=(X^{T}X)^{-1}X^{T}Y\)</div>
+
+  <p>Note again that our loss function is convex so our solution is the minimum and it's unique. We can now
+    move onto coding up our solution and training the model. This time we will randomly generate 100 points between -2 and
+    3 and, plug them into the polynomial \(1-1.2x+2.4x^2+x^3-0.6x^4\) and then add some noise to the output (noise is generated from
+    a standard normal distribution).
+  </p>
+
+  <pre><code class="language-python">
+    import random
+
+    data = [random.uniform(-2, 3) for _ in range(100)]
+
+    pol_lis = []
+
+    for i in range(len(data)):
+      pol_lis.append(1 - 1.2 * data[i] + 2.4 * data[i]**2 + data[i]**3 - 0.6 * data[i]**4)
+
+    Y = np.array([x + random.gauss(0, 1) for x in pol_lis])
+  </code></pre>
+
+  <p>We also change our augmentation function to also raise the data to the power of the i, where i is the column. The rest is the same
+    as linear regression.
+  </p>
+
+  <pre><code class="language-python">
+  import numpy as np
+
+  m = 4
+
+  def Augmentation(data):
+    X = []
+
+    for i in range(len(data)):
+      X.append([data[i] ** j for j in range(1, m + 1)])
+
+    X = np.array(X)
+    X = np.c_[np.ones(X.shape[0]), X]
+    return X
+
+  def Error(X, Y, beta):
+    return np.linalg.norm(np.matmul(X, beta) - Y)**2
+
+  def PolynomialRegression(X,Y):
+      beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(np.transpose(X), X)), np.transpose(X)), Y)
+      return beta
+
+
+
+  X = Augmentation(data)
+  beta = PolynomialRegression(X,Y)
+  error = Error(X, Y, beta)
+  </code></pre>
+
+  <a href="https://colab.research.google.com/drive/1AYZi44P4I8_sjiRQg1US9pZ2Q9hXzDNx?usp=sharing" target="_blank">
+  <button>Open in Google Colab</button>
+  </a>
+  
+  <p>Running the code we get an error of 105.8, this error comes from the noise we added. Comparing
+    the coeffecients we got to the coeffecients of the polynomial we used to generate the data we see they are very close. 
+    This means our polynomial regression was succesful. Also in the colab book is a code sement for viewing plots of the data and prediction line. 
+    When we plot them out we see the following graph which confirms our model is succesful at predicting the data.
+  </p>
+
+  <div style="text-align: center; margin-top: 40px;">
+    <img src="polynomial.png" alt="Polynomial Regression Plot" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <div style="font-size: 14px; color: #555; margin-top: 8px;">Figure: Plot of the polynomial regression prediction vs. data</div>
+  </div>
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="linearregression.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="elasticnet.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>

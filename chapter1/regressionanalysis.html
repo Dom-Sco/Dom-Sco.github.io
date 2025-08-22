@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 1.0: Regression Analysis</title>
+  <meta name="description" content="A beginner-friendly guide to regression analysis in machine learning." />
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+  </style>
+</head>
+<body>
+
+  <h1>Chapter 1.0: Regression Analysis</h1>
+
+  <p>One of the main goals of statistics is to make predictions from data. In a supervised setting we are given some data \(\tilde{x}\) and wish to marke
+    predictions \(\tilde{y}\) from that data. For example we could be given the number of hours students studied (\(\tilde{x}\)) and wish to predict from that their exam score (\(\tilde{y}\), this is given in the data we use, we want our model to predict this value from \(\tilde{x}\)).
+    One of the ways to do this is to assume your data roughly follows a mathematical function that has parameters (which we will denote \(\theta\)) that can be adjusted to make the function better fit the data.
+    Consider the following example, when plotted your data might look like it follows a line \(f(x;\theta)=mx+c\), here \(\theta=(m,c)^{T}\).
+  Try playing with the parameters of the function in the graph below to find values of m and c that cause the line to be as close to the data points as possible.</p>
+
+  <div class="inputs">
+    <label for="m">Slope (m):</label>
+    <input type="number" id="m" value="1" step="0.1" />
+    <label for="c">Intercept (c):</label>
+    <input type="number" id="c" value="0" step="0.1" />
+    <button onclick="updateGraph()">Update Graph</button>
+  </div>
+  <div id="graph"></div>
+
+  <p>The next thing to consider is how good a given function "fits" the data. Is the values the function predicts close to or far away from the data we've seen? To measure this we use what is known as a loss function denoted \(\ell(f(\tilde{x};\theta),\tilde{y})\). This function provides us with
+    information as to how far away our model \(f(\tilde{x};\theta)\) is from the data \(\tilde{y}\). Generally we also want this function to output a scalar value and have a minimum of zero (when the function at each input is equal to the data). The most commonly used loss function is the mean squared error:</p>
+
+    <div class="math">\(MSE=\frac{1}{n}\sum_{i=1}^{n}(f(x_{i};\theta)-y_{i})^2=\frac{1}{n}\sum_{i=1}^{n}\left\lVert f(x_{i};\theta)-y_{i} \right\rVert_{2}^{2}\)</div>
+
+  <p>The mean square error is the most commonly used loss function because it has a lot of nice properties. Firstly it is related to the euclidean distance (as seen in the above equation). In this equation we
+    can see that as the distance between the predictions and the data increase so will the Euclidean distance, thus it is a direct measure of distance. It also has nice statistical properties as it is directly
+    related to the variance and bias of the estimator.
+  </p>
+
+  <div class="math">\(MSE=\mathbb{E}_{\theta}\left[(\hat{\theta}-\theta)^2\right]=Var_{\theta}(\hat{\theta})+Bias(\hat{\theta},\theta)^2\)</div>
+
+  <p>A proof of this fact can be found on wikipedia <a href="https://en.wikipedia.org/wiki/Mean_squared_error#Estimator">here</a>. This is an important property as in our models we seek
+    to have a model that accurately captures the patterns in the data (low variance) but also generalises well to new data the model wasn't trained
+    on (low bias). From the relation above we can see that minimising the mean squared error minimises both the variance and the bias which will generally
+    lead to an ideal model. This concept of variance and bias is important to all models we train in machine learning as we always want our models to
+    generalise to new data well whilst predicting known data accurately (this is known as the bias-variance trade off).
+  </p>
+
+
+  <p>The mean square error is not the only loss function as we shall see in further tutorials. Depending on the problem we are solving we may wish to define 
+    other loss functions that will measure the "loss" better than the mean square error in certain cases.
+  </p> 
+  
+  <p>As we seek to find the parameters that minimise the loss function we can define regression as the following optimisation problem:</p>
+
+   <div class="math">\(\hat{\theta}=\underset{\theta}{\mathrm{argmin}}\hspace{0.09cm}\ell(f(\tilde{x};\theta),\tilde{y})\)</div>
+
+  <p>From our knowledge of optimisation we know that this problem can be solved by taking the derivative (or gradient in the multivariable case) of \(\ell(f(\tilde{x};\theta),\tilde{y})\) with
+    respect to \(\theta\) and setting to 0 (or the zero vector in the multivariable case) and solving for the parameters.
+    So the main steps in performing regression are:</p> 
+    <h4>1. Describe a model with unknown parameters (\(\theta\)) that will accurately model the data</h4>
+    <h4>2. Define an appropriate loss function for the regression problem</h4>
+    <h4>3. Given the training data minimise the loss function with respect to the parameters of your model</h4>  
+    In the following tutorials we will look at linear regression, polynomial regression, logistic regression, ridge regression, lasso regression and other models used for regression.</p>
+
+  <script>
+    function generateLine(m, c) {
+      let x = [];
+      let y = [];
+      for (let i = -10; i <= 10; i += 0.1) {
+        x.push(i);
+        y.push(m * i + c);
+      }
+      return { x: x, y: y };
+    }
+
+    function updateGraph() {
+      const m = parseFloat(document.getElementById("m").value);
+      const c = parseFloat(document.getElementById("c").value);
+      const lineData = generateLine(m, c);
+
+      // Define points to plot (can also make this dynamic)
+      const pointX = [1, 2, 3, 4, 5, 6];
+      const pointY = [5, 5, 8, 9, 7, 10]; 
+
+      const lineTrace = {
+        x: lineData.x,
+        y: lineData.y,
+        mode: 'lines',
+        type: 'scatter',
+        name: `y = ${m}x + ${c}`,
+        line: { color: '#007acc' }
+      };
+
+      const pointTrace = {
+        x: pointX,
+        y: pointY,
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Data',
+        marker: {
+          color: 'red',
+          size: 10,
+          symbol: 'circle'
+        }
+      };
+
+      const layout = {
+        title: `Graph of y = ${m}x + ${c}`,
+        xaxis: { title: 'x', range: [-10, 10] },
+        yaxis: { title: 'y', range: [-20, 20] },
+        margin: { t: 50 }
+      };
+
+      Plotly.newPlot('graph', [lineTrace, pointTrace], layout);
+    }
+
+    // Initial load
+    updateGraph();
+  </script>
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="previous" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="linearregression.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>

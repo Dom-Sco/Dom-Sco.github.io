@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 1.1: Linear Regression</title>
+  <meta name="description" content="A beginner-friendly guide to linear regression in machine learning." />
+  
+  <!-- Open Graph (Facebook, LinkedIn) -->
+  <meta property="og:title" content="Intro to Linear Regression in ML" />
+  <meta property="og:description" content="A beginner-friendly guide to understanding linear regression in machine learning." />
+  <meta property="og:image" content="https://yourdomain.com/images/linearregression.png" />
+  <meta property="og:url" content="https://yourdomain.com/tutorials/linear-regression" />
+  <meta property="og:type" content="article" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Intro to Linear Regression in ML" />
+  <meta name="twitter:description" content="A beginner-friendly guide to understanding linear regression in machine learning." />
+  <meta name="twitter:image" content="https://yourdomain.com/images/linear-regression-thumb.png" />
+
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+
+</head>
+<body>
+
+  <h1>Chapter 1.1: Linear Regression</h1>
+
+  <p>One of the simplest models for regression is the linear model. In this model we will have p independent variables and one dependent variable y.
+    In the problem setup we are given n observations labelled \(X_{i}=(X_{i1}, X_{i2},...,X_{in})\) (\(i=1,...,n\)) with a corresponding
+    dependent variable \(Y_{i}\). The model describes a hyperplane given by the equation:
+  </p>
+
+  <div class="math">\(f(X;\theta)=Y_i=\beta_0+\beta_1X_{i1}+...+\beta_{p}X_{ip}\)</div>
+  
+  <p>Here \(\beta=(\beta_{0},...,\beta_{n})\) are constants that will have to be worked out so the model fits the data well. We can do this
+    by applying out knowledge of regression. For this specific problem we use least squares as our lost function (same as MSE but we don't divide by n). So we
+    want to solve:
+  </p>
+
+  <div class="math">\(\hat{\beta}=\underset{\beta}{\mathrm{argmin}}\hspace{0.09cm}\sum_{i=0}^{n}\left(\beta X_{i}-Y_{i}\right)^{2}\)</div>
+
+  <p>Note for this to hold true to our model we impute the data matrix with a column of ones so that \(\beta_0 * X_{0}=\beta_{0} * 1=\beta_{0}\), i.e. we
+  get our constant. We can rewrite our loss function to the following (note \(X\) is the data matrix):</p>
+
+  <div class="math">$$\begin{aligned} \sum_{i=0}^{n}\left(\beta X_{i}-Y_{i}\right)^{2} &= \lVert X\beta-Y\rVert^{2}\\
+     &= (X\beta-Y)^{T}(X\beta-Y) \\ 
+     &=  Y^{T}Y-Y^{T}X\beta-\beta^{T}X^{T}Y+\beta^{T}X^{T}X\beta\end{aligned}$$</div>
+
+  <p>The next step in the optimisation is to take the gradient of this with respect to \(\beta\). Doing this we get:</p>
+
+  <div class="math">\(-2X^TY+2X^TX\beta\)</div>
+
+  Setting this equal to the zero vector and solving for \(\beta\) we get:
+
+  <div class="math">\(\hat{\beta}=(X^{T}X)^{-1}X^{T}Y\)</div>
+
+  <p>Note that our loss function is convex so our solution is the minimum and it's unique. We can now
+    move onto coding up our solution and training the model.
+  </p>
+
+  <pre><code class="language-python">
+  import numpy as np
+  from sklearn.datasets import load_diabetes
+
+  def Augmentation(X):
+    X = np.c_[np.ones(X.shape[0]), X]
+    return X
+
+  def Error(X, Y, beta):
+    return np.linalg.norm(np.matmul(X, beta) - Y)**2
+
+  def LinearRegression(X,Y):
+      beta = np.matmul(np.matmul(np.linalg.inv(np.matmul(np.transpose(X), X)), np.transpose(X)), Y)
+      return beta
+
+  diabetes = load_diabetes()
+  X = Augmentation(diabetes.data)
+  Y = diabetes.target
+
+  beta = LinearRegression(X,Y)
+  error = Error(X, Y, beta)
+  </code></pre>
+
+  <a href="https://colab.research.google.com/drive/1SUN0v_K3dFLvqm6hhpgvjm0FzWwFsJXh?usp=sharing" target="_blank">
+  <button>Open in Google Colab</button>
+  </a>
+  <p>In the above code we train the model on the diabetes dataset, a dataset that has 10 independent variables and one dependent we are trying to predict. To do this we define a function for adding a column of ones onto the data matrix, an error function to calculate the value of our loss
+    function and a function to solve the optimisation problem we solved above.
+  </p>
+
+  <p>Running the code we get a high error of approximately 1263985. This means linear regression probably wasn't the best model to use
+    for making predictions on this dataset. Also in the colab book is a code sement for viewing plots of the data and prediction lines. When we plot
+    them out we see that the data in this case has a wide spread (high variance) and thus a linear model is unable to capture that.
+  </p>
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="linearregression.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="polynomialregression.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
