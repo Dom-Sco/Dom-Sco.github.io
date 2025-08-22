@@ -171,7 +171,7 @@ code {
                         S_{b}&=\sum_{k=1}^{K}n_{k}(\mu_{k}-\mu)(\mu_{k}-\mu)^T\end{align}\)</div>
 
     <p>Here \(\mu_{k}\) is the sample mean of the kth class, \(\mu\) is the overall sample mean and \(\sum_{x_{i}\in C_{k}}\) means sum over all the samples from the kth class. Now
-        we want to construct an objective function that achieves our goal. First define we define a projection matrix \(W=[w_1,...,w_{k-1}]\) (\(W\in\mathbb{R}^{d\times(K-1)}\)) as a matrix of what we later see are eigenvectors that correspond to the
+        we want to construct an objective function that achieves our goal. First we define a projection matrix \(W=[w_1,...,w_{k-1}]\) (\(W\in\mathbb{R}^{d\times(K-1)}\)) as a matrix of what we later see are eigenvectors that correspond to the
         largest eigenvalues. With \(W\) we can now measure the spread between class means after projection with \(|W^{T}S_{B}W|\) and the spread within each class after projection with \(|W^{T}S_{B}W|\).
         Recall that the determinant gives the signed volume of the n-dimensional parallelepiped and hence we are getting a measure of the within class and between class spread after projection. 
         As we want the seperate classes far apart but the samples from the same class close we want to make the volume of the n-dimensional parallelepiped for within class small and the between class large which
