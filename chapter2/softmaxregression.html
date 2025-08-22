@@ -128,7 +128,7 @@ code {
     as we want (we will denote the number of classes with K) and we model the probability that a given data point belongs to class i as follows:
   </p>
 
-  <div class="math">\(\hat{y}_{i}=P(y=i|x)=\frac{e^{z_{i}}}{\sum_{k=1}^{K}e^{z_{k}}}\), where \(i\in[1,K]\), \(Z=Wx+B\) and \(z_k=w_{k}^{T}x+b_{k}\)</div>
+  <div class="math">\(\hat{y}_{i}=P(y=i|x)=\frac{e^{z_{i}}}{\sum_{k=1}^{K}e^{z_{k}}}\), where \(i\in[1,K]\), \(Z=WX+B\) and \(z_k=w_{k}^{T}x_{k}+b_{k}\)</div>
   
   <p>This is the softmax function and we'll see it a lot when we work on
     neural networks as it is generally used as the final layer of networks in classification problems. We also take the \(\mathrm{argmax}\) (class with highest probability) as
@@ -150,7 +150,7 @@ code {
         \nabla_{B}\mathcal{L}(Z)&=\hat{Y}-Y\end{aligned}\)</div>
 
   A derivation of the gradient with respect to \(Z\) can be found <a href="https://www.geeksforgeeks.org/machine-learning/derivative-of-the-softmax-function-and-the-categorical-cross-entropy-loss/">here</a>. 
-  Recall that \(Z=Wx+B\), so the gradients with respect to W and B can be found using chain rule:
+  Recall that \(Z=WX+B\), so the gradients with respect to W and B can be found using chain rule:
 
   <div class="math">\(\begin{align}\frac{\partial\mathcal{L}}{\partial W}&=\frac{\partial\mathcal{L}}{\partial Z}\frac{\partial Z}{\partial W}=(\hat{Y}-Y)X^{T}\\
                       \frac{\partial\mathcal{L}}{\partial B}&=\frac{\partial\mathcal{L}}{\partial Z}\frac{\partial Z}{\partial B}=\hat{Y}-Y\end{align}\)</div>
