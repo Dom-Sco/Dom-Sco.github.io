@@ -120,6 +120,43 @@ code {
 <!-- Initialize highlighting -->
 <script>hljs.highlightAll();</script>
 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://yourdomain.com/lda-tutorial.html"
+  },
+  "headline": "Chapter 2.3: Linear Discriminant Analysis",
+  "description": "A beginner-friendly guide to Linear Discriminant Analysis (LDA) in machine learning, covering both classification and dimensionality reduction with math and code examples.",
+  "author": {
+    "@type": "Person",
+    "name": "Dominic Scocchera"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Your Website Name",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://yourdomain.com/logo.png"
+    }
+  },
+  "datePublished": "2025-08-23",
+  "dateModified": "2025-08-23",
+  "image": "https://yourdomain.com/LDA.png",
+  "keywords": [
+    "Linear Discriminant Analysis", "Machine Learning", "LDA Tutorial", "Dimensionality Reduction", "Classification"
+  ],
+  "codeSampleType": "full",
+  "programmingLanguage": "Python",
+  "articleSection": "Machine Learning",
+  "isPartOf": {
+    "@type": "CreativeWorkSeries",
+    "name": "Machine Learning Tutorials"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -273,7 +310,7 @@ def predict(X, cov_inv, means, priors):
     return np.array(preds)
   </code></pre>
 
-  <p>Running this on the iris dataset we get a prediction accuracy of 84.44%. We now write the function for diminsionality reduction:</p>
+  <p>Running this on the iris dataset we get a prediction accuracy of 84.44%. We now write the function for dimensionality reduction:</p>
 
   <pre><code class="language-python">
   def lda_projection_matrix(X, y, num_components=None):
@@ -337,7 +374,9 @@ def predict(X, cov_inv, means, priors):
     <div style="font-size: 14px; color: #555; margin-top: 8px;">Figure: Plot of iris data after projection</div>
 </div>
 
-<p>Here we can indeed see its been reduced to \(K-1=3-1=2\) dimensions and in such a way that the classes are seperated.</p>
+<p>Here we can indeed see its been reduced to \(K-1=3-1=2\) dimensions and in such a way that the classes are seperated. As an excercise use this projected data in the prediction model and see if you
+    get an improved accuracy compared to what we got above (84.44%).
+</p>
 
 <!-- Bottom Navigation Bar -->
 <footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
