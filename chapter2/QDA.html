@@ -168,7 +168,7 @@ code {
     each class has a prior probability \(\pi_{k}=\frac{n_{k}}{n}\), where \(n_{k}\) is the number of samples from class k.
   </p>
 
-  <div class="math">\(p(x|y=k)=\frac{1}{(2\pi)^{d/2}|\Sigma_{k}|^{1/2}}\exp\left(-\frac{1}{2}(x-\mu_{k})^{T}\Sigma^{-1}(x-\mu_{k})\right)\)</div>
+  <div class="math">\(p(x|y=k)=\frac{1}{(2\pi)^{d/2}|\Sigma_{k}|^{1/2}}\exp\left(-\frac{1}{2}(x-\mu_{k})^{T}\Sigma_{k}^{-1}(x-\mu_{k})\right)\)</div>
 
   <p>We can now find the probability of a sample belonging to a class using bayes rule:</p>
 
