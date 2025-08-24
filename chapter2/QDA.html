@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 2.4: Quadratic Discriminant Analysis</title>
+  <meta name="description" content="A beginner-friendly guide to linear disciminant analysis in machine learning." />
+
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://yourdomain.com/lda-tutorial.html"
+  },
+  "headline": "Chapter 2.3: Linear Discriminant Analysis",
+  "description": "A beginner-friendly guide to Linear Discriminant Analysis (LDA) in machine learning, covering both classification and dimensionality reduction with math and code examples.",
+  "author": {
+    "@type": "Person",
+    "name": "Dominic Scocchera"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Your Website Name",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://yourdomain.com/logo.png"
+    }
+  },
+  "datePublished": "2025-08-23",
+  "dateModified": "2025-08-23",
+  "image": "https://yourdomain.com/LDA.png",
+  "keywords": [
+    "Linear Discriminant Analysis", "Machine Learning", "LDA Tutorial", "Dimensionality Reduction", "Classification"
+  ],
+  "codeSampleType": "full",
+  "programmingLanguage": "Python",
+  "articleSection": "Machine Learning",
+  "isPartOf": {
+    "@type": "CreativeWorkSeries",
+    "name": "Machine Learning Tutorials"
+  }
+}
+</script>
+</head>
+<body>
+
+  <h1>Chapter 2.4: Quadratic Disciminant Analysis</h1>
+
+  <p>QDA is very similar to LDA except we now drop the assumption that all classes share the same covarience matrix (each class has a different covariance matrix).
+    Again in the setup of QDA we are given a set of samples \(x_{1},...,x_{n}\) and class labels \(y_{1},...,y_{n}\) (there are K different classes).
+    It again also assumes that all class-conditional distributions (\(p(x|y=k)\)) are distributed according to a multivariate gaussian (as seen below, also note that \(|\cdot|\) is the determinant) and
+    each class has a prior probability \(\pi_{k}=\frac{n_{k}}{n}\), where \(n_{k}\) is the number of samples from class k.
+  </p>
+
+  <div class="math">\(p(x|y=k)=\frac{1}{(2\pi)^{d/2}|\Sigma_{k}|^{1/2}}\exp\left(-\frac{1}{2}(x-\mu_{k})^{T}\Sigma^{-1}(x-\mu_{k})\right)\)</div>
+
+  <p>We can now find the probability of a sample belonging to a class using bayes rule:</p>
+
+  <div class="math">\(p(y=k|x)=\frac{p(x|y=k)\pi_{k}}{\sum_{j=1}^{K}p(x|y=j)\pi_{j}}\)</div>
+
+  <p>As the denominator is the same for all classes the class with the highest numerator will be chosen (we are maximising the posterior probability). 
+    Taking the log of the numerator (as its easier to work with) we get our discriminant function:</p>
+
+  <div class="math">\(\begin{align}\delta_{k}(x)&=\log p(x|y=k)+\log\pi_{k}\\
+                        &=-\frac{1}{2}\log|\Sigma_{k}|-\frac{d}{2}\log(2\pi)-\frac{1}{2}(x-\mu_{k})^T\Sigma_{k}^{-1}(x-\mu_{k})+\log\pi_{k}\end{align}\)</div>
+
+  <p>We see that the term \(\frac{d}{2}\log(2\pi)\) is constant so it will be the same for all classes, hence we can drop it in our discriminant function giving us:</p>
+
+  <div class="math">\(\delta_{k}(x)=-\frac{1}{2}\log|\Sigma_{k}|-\frac{1}{2}(x-\mu_{k})^T\Sigma_{k}^{-1}(x-\mu_{k})+\log\pi_{k}\)</div>
+
+  <p>This is our disciminant function and we now see why its called quadratic discriminant analysis as compared to LDA we retain the quadratic term. For classification we now
+    just take the class that gives the highest value of the discriminant function.
+  </p>
+
+  <div class="math">\(\hat{y}=\arg\max_{k}\delta_{k}(x)\)</div>
+
+  <p>Now to the coding section of this tutorial. In this code we have a function that fits our model by calculating all the means, covariance matrices and prior probabilities.
+    We also have a prediction function which takes these values and plugs them into the discriminant equation and returns the maximum as the prediction.
+  </p>
+  
+
+  <pre><code class="language-python">
+import numpy as np
+
+def qda_fit(X, y):
+    """
+    Estimate the parameters for QDA.
+    
+    Parameters:
+        X : numpy.ndarray of shape (n_samples, n_features)
+            Feature matrix.
+        y : numpy.ndarray of shape (n_samples,)
+            Class labels.
+
+    Returns:
+        means : dict
+            Dictionary mapping class label to class mean vector.
+        covariances : dict
+            Dictionary mapping class label to class covariance matrix.
+        priors : dict
+            Dictionary mapping class label to class prior probability.
+    """
+    classes = np.unique(y)
+    means = {}
+    covariances = {}
+    priors = {}
+
+    for cls in classes:
+        X_k = X[y == cls]
+        means[cls] = np.mean(X_k, axis=0)
+        covariances[cls] = np.cov(X_k, rowvar=False)
+        priors[cls] = X_k.shape[0] / X.shape[0]
+
+    return means, covariances, priors
+
+
+def qda_predict(X, means, covariances, priors):
+    """
+    Predict class labels using QDA.
+    
+    Parameters:
+        X : numpy.ndarray of shape (n_samples, n_features)
+            Feature matrix.
+        means : dict
+            Dictionary of class mean vectors.
+        covariances : dict
+            Dictionary of class covariance matrices.
+        priors : dict
+            Dictionary of class prior probabilities.
+
+    Returns:
+        y_pred : numpy.ndarray of shape (n_samples,)
+            Predicted class labels.
+    """
+    n_samples = X.shape[0]
+    classes = list(means.keys())
+    y_pred = np.empty(n_samples, dtype=object)
+
+    for i in range(n_samples):
+        x = X[i]
+        scores = {}
+        for cls in classes:
+            mean = means[cls]
+            cov = covariances[cls]
+            prior = priors[cls]
+
+            # Compute discriminant function
+            try:
+                inv_cov = np.linalg.inv(cov)
+                det_cov = np.linalg.det(cov)
+            except np.linalg.LinAlgError:
+                raise ValueError(f"Covariance matrix for class {cls} is singular.")
+
+            diff = x - mean
+            log_likelihood = -0.5 * np.log(det_cov) - 0.5 * diff.T @ inv_cov @ diff
+            log_prior = np.log(prior)
+            scores[cls] = log_likelihood + log_prior
+
+        # Predict class with highest score
+        y_pred[i] = max(scores, key=scores.get)
+
+
+    return [int(x) for x in y_pred]
+  </code></pre>
+
+  <a href="https://colab.research.google.com/drive/1dGRq5jijgRoOzkIKXmUjy8EgtZ8C7MdY?usp=sharing" target="_blank">
+  <button>Open in Google Colab</button>
+  </a>
+
+  <p>Training this on the iris dataset we get an improved accuracy over LDA (98% compared to 84.44%). This is beacuse the descion boundaries in QDA are quadratic so non-linearities in the
+    data are captured.
+  </p>
+
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="LDA.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="#" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
