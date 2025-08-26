@@ -207,7 +207,7 @@ class MCTSNode:
     Selection is when we apply the UCT formula at each succesive round of child nodes to find the best path. We stop when we reach a layer of the tree with a child with which \(N(s,a)=0\). We
     then proceed to expansion where unless we reach a game over we choose a child node. Then we reach simulation where we perform a rollout from that child node. We then do backpropagation to update
     the values of the important variables of all the nodes we explored. We now expand our Node class to include functions to check for untried actions at a node (is_fully_expanded()), calculate the
-    optimum value of the UCT at a node (best_child(c=1.4)) (note 1.4 is close to \(\sqrt{2}\)), return a child node that was selected (expand()), update rewards and visits for nodes (for backpropagation
+    optimum value of the UCT at a node (best_child(c=1.4)) (note 1.4 is close to \(\sqrt{2}\)), return a child node that was selected (expand()), update rewards and visits for nodes for the purpose of backpropagation
     update(self, reward)) and add a function to perform a random rollout. 
   </p>
 
