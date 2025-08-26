@@ -196,7 +196,7 @@ class MCTSNode:
     This traversal is done until we reach a node with unexplored actions (N(s,a) is 0 for all actions).
     We then add one new child node from the untried moves (randomly). We then play out a random game from that node (each player takes random moves until game end (i.e. a rollout)).
     Finally we propagate up all the new counts and rewards from the nodes we explored during the rollout. One thing to note is that if we start at the top of the game tree
-    we can start doing some initial exploration by doing a rollout for each child node. This is so we can get a decent initial evaluation from our UCT function since \(N(s,a)=0\) for all child nodes UCT is undefined (divide by 0 error).
+    we can start doing some initial exploration by doing a rollout for each child node. This is so we can get a decent initial evaluation from our UCT function since when \(N(s,a)=0\) for all child nodes UCT is undefined (divide by 0 error).
   </p>
 
   <div class="math">\(a^{*}=\arg\max_{a}\left[\bar{X}(s,a)+C\cdot\sqrt{\frac{\ln N(s)}{N(s,a)}}\right]\)</div>
