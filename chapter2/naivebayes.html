@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 2.5: Support Vector Machines</title>
+  <meta name="description" content="A beginner-friendly guide to support vector machines in machine learning." />
+
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://yourdomain.com/lda-tutorial.html"
+  },
+  "headline": "Chapter 2.3: Linear Discriminant Analysis",
+  "description": "A beginner-friendly guide to Linear Discriminant Analysis (LDA) in machine learning, covering both classification and dimensionality reduction with math and code examples.",
+  "author": {
+    "@type": "Person",
+    "name": "Dominic Scocchera"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Your Website Name",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://yourdomain.com/logo.png"
+    }
+  },
+  "datePublished": "2025-08-23",
+  "dateModified": "2025-08-23",
+  "image": "https://yourdomain.com/LDA.png",
+  "keywords": [
+    "Linear Discriminant Analysis", "Machine Learning", "LDA Tutorial", "Dimensionality Reduction", "Classification"
+  ],
+  "codeSampleType": "full",
+  "programmingLanguage": "Python",
+  "articleSection": "Machine Learning",
+  "isPartOf": {
+    "@type": "CreativeWorkSeries",
+    "name": "Machine Learning Tutorials"
+  }
+}
+</script>
+</head>
+<body>
+
+  <h1>Chapter 2.5: Support Vector Machines</h1>
+
+  <p>We are now going to cover a once very popular machine learning algorithm SVM that used to have competitive performance with neural networks, but has since been replace by the latter due to
+    increases in computing power and better neural network models. It is a binary linear classifier but can be extended to multiclass problems by training an SVM on the pairwise combination of all different classes
+    and choosing the class that is predicted the most out of all the models. Our model with weights and biases is:
+  </p>
+
+  <div class="math">\(w^Tx+b=0\)</div>
+
+  <p>As it is a binary classifier we will have two outputs:</p>
+
+  <div class="math">\(\begin{align}w^Tx+b&=1\\
+    w^Tx+b&=-1\end{align}\)</div>
+
+  <p>This hyperplane describes a decision boundary between the classes. In SVM we attempt to find the "maximum margin hyperplane", i.e. the hyperplane from which the distance between
+    the hyperplane and the closest point from either class is maximised. We call the distance between the hyperplane and these points the margin and its defined as \(\frac{2}{\Vert w\Vert}\). so our classification rule is:</p>
+
+  <div class="math">\(\begin{align}w^Tx_{i}+b&\geq1 \text{ if } y_{i}=1\\
+    w^Tx_{i}+b&\leq-1 \text{ if } y_{i}=-1\end{align}\)</div>
+
+  <p>We can rewrite this decision rule as:</p>
+
+  <div class="math">\(y_{i}(w^Tx+b)\geq1\) for all \(1\leq i \leq n\)</div>
+
+  <p>Above is the case for when we have data that can be seperated by a hyperplane (linearly seperable data), however in practice this is unlikely to occur so we extend the model to take into account violations (the error) between the seperating hyperplane
+    and the incorrect prediction.
+  </p>
+
+  <div class="math">\(y_{i}(w^Tx+b)\geq1-\zeta_{i}\)</div>
+  
+  <p>Here \(\zeta_{i}\) is our error and if \(\zeta_{i}=0\) we consider it correctly classified, if \(0<\zeta_{i}<1\) it is correctly classified but inside the margin and if \(\zeta_{i}>1\) it is incorrectly classified.
+    From this we can find the parameters of the model by solving the following optimisation problem:
+  </p>
+
+  <div class="math">\(\arg\min_{w,b,\zeta}\frac{1}{2}\Vert w \Vert^{2}+C\sum_{i=1}^{n}\zeta_{i}\) subject to \(y_{i}(w^Tx+b)\geq1-\zeta_{i}\)</div>
+
+  <p>This is known as the primal formulation of the optimisation problem. Here the sum is used to penalise violations. We have C as a regularisation parameter that controls the "hardness" of the margin (large C has less tolerance for margin violations whilst small C has more tolerance).
+    Another trick we can use to help with data that isn't linearly seperable is the kernel trick. We map our data to a higher dimension via a function that will help make it linearly seperable in the higher dimension.
+    In general our kernal function is defined as a dot product of a function \(\phi\) applied to the data:
+  </p>
+
+  <div class="math">\(K(x,y)=\phi(x)^{T}\phi(y)\)</div>
+
+  <p>Some common kernels are defined below:</p>
+
+  <div class="math">\(\begin{align}K(x,y)&=x^{T}y\text{, Linear Kernel}\\
+    K(x,y)&=(x^Ty+c)^{d}\text{, Polynomial Kernel}\\
+    K(x,y)&=\exp{(-\gamma\Vert x-y\Vert^{2})}\text{, RBF (Gaussian) Kernel}\end{align}\)</div>
+
+  <p>In order to apply the Kernel trick we can apply the kernel to the dual optimisation problem (equivalent optimisation problem, note the dual is lagrangian and \(\alpha_{i}\) are lagrange multipliers). Also note that this kernel trick can be applied to any linear classifier.</p>
+
+  <div class="math">\(max_{\alpha}\sum_{i=1}^{n}\alpha_{i}-\frac{1}{2}\sum_{i,j}\alpha_{i}\alpha_{j}y_{i}y_{j}K(x_{i},x_{j})\) subject to \(0\leq\alpha_{i}\leq C, \sum_{i}\alpha_{i}y_{i}=0\)</div>
+
+    <p>We also now wee what the support vectors are, they are the points that touch the margin line, i.e. \(y_{i}(w^{T}x_{i}+b)=1\), these also correspond to the non-zero lagrange multipliers (\(\alpha_{i}\neq0\)).
+        From this we can see that our weights and biases are found through:
+    </p>
+
+  <div class="math">\(w=\sum_{i}\alpha_{i}y_{i}x_{i}\)</div>
+  <div class="math">\(b=\left[\sum_{j}\alpha_{j}y_{i}K(x_{j},x_{i})\right]-y_{i}\)</div>
+  
+  <p>The decision function also becomes:</p>
+  
+  <div class="math">\(\text{sgn}\left(\left[\sum_{i=1}^{n}\alpha_{i}y_{i}K(x_{i}, z)\right]\right)\)</div>
+
+  <p>Note here that \(x_{i}\) are the support vectors and \(z\) is the new point we want to classify. There are numerous methods for solving either the primal or dual form of SVM (most notably quadratic programming methods),
+    however we will focus specifically on PEGASOS a sub-gradient method for solving the primal form. We will first focus on the linear form which in PEGASOS is defined slightly different to what we saw above:
+  </p>
+
+  <div class="math">\(\min_{w}\frac{\lambda}{2}\Vert w\Vert^{2}+\frac{1}{n}\sum_{i=1}^{n}\max(0,1-y_{i}w^{T}x_{i})\)</div>
+
+  <p>Here \(\lambda\) is the regularisation parameter (inverse of C in the typical formulation) and the second term is known as the hinge loss (loss function used in this formulation of SVM). For this
+    algorithm we first randomly form T mini batches of the data (for t=1,2,...,T). We then randomly sample an in index \(i_{t}\) and use this batch for a single step of PEGASOS. As this is a form of stochastic
+    gradient descent we need a learning rate which is set as \(\eta_{t}=\frac{1}{\lambda t}\). Our subgradient is:
+  </p>
+
+  <div class="math">\(\nabla f(w)=\begin{cases}\lambda w-yx & \text{if } yw^{T}x<1\\
+    \text{else }\lambda w\end{cases}\)</div>
+
+  <p>We then update \(w\) according to the usual gradient descent algorithm:</p>
+
+  <div class="math">\(w_{t+1}=w_{t}-\eta_{t}\nabla f(w)\)</div>
+
+  <p>There is also another step that prevents the norm of \(w\) from blowing up (constrains \(w\) so that we can ensure convergence):</p>
+
+  <div class="math">\(w=\min\left(1,\frac{1}{\sqrt{\lambda}\Vert w\Vert}\right)w\)</div>
+
+  <p>As we want our algorithm to consider Kernel functions we extend it somewhat to the dual formulation (as it is able to optimise the kernel function). Through chain rule our update becomes:
+  </p>
+
+  <div class="math">\(w_{t+1}=(1-\eta_{t}\lambda)w_{t}+\eta_{t}t_{t}\phi(x_{t})\)</div>
+
+  <p>Now if we evaluate our decision function along with the hinge loss condition as such \(y_{t}\times\)decision function\(<1\), we can add \(x_{t}\) to the support vector set (the vector is within the margin).
+    It can also be shown that in this case our lagrange multipliers are \(\alpha_{t}=\frac{1}{\lambda t}\). So as we are looking at the dual problem we instead of updating our weights update our support vector set and
+    our lagrange multipliers at each step. If we look back to our decision function we see that is all we have to find. We now code this up:</p>
+
+  <pre><code class="language-python">
+import numpy as np
+from collections import defaultdict
+
+# ---------------------------
+# Kernel functions
+# ---------------------------
+def linear_kernel(x, y):
+    return np.dot(x, y)
+
+def polynomial_kernel(x, y, degree=3, coef0=1):
+    return (np.dot(x, y) + coef0) ** degree
+
+def rbf_kernel(x, y, gamma=0.05):
+    return np.exp(-gamma * np.linalg.norm(x - y) ** 2)
+
+# ---------------------------
+# PEGASOS Kernel SVM (Binary)
+# ---------------------------
+class PegasosKernelSVM:
+    def __init__(self, kernel='rbf', lambda_param=0.01, max_iter=1000, batch_size=1, **kernel_params):
+        self.lambda_param = lambda_param
+        self.max_iter = max_iter
+        self.batch_size = batch_size
+        self.kernel_name = kernel
+        self.kernel_params = kernel_params
+
+        self.kernel = self._get_kernel(kernel)
+        self.support_vectors = []
+        self.support_labels = []
+        self.alphas = []
+
+    def _get_kernel(self, name):
+        if name == 'linear':
+            return linear_kernel
+        elif name == 'polynomial':
+            return lambda x, y: polynomial_kernel(x, y, **self.kernel_params)
+        elif name == 'rbf':
+            return lambda x, y: rbf_kernel(x, y, **self.kernel_params)
+        else:
+            raise ValueError(f"Unknown kernel: {name}")
+
+    def fit(self, X, y):
+        n_samples = X.shape[0]
+
+        for t in range(1, self.max_iter + 1):
+            # Mini-batch
+            idx = np.random.choice(n_samples, self.batch_size, replace=False)
+            X_batch = X[idx]
+            y_batch = y[idx]
+
+            for xi, yi in zip(X_batch, y_batch):
+                # Compute decision function
+                if len(self.support_vectors) == 0:
+                    decision = 0
+                else:
+                    decision = sum(
+                        alpha * y_sv * self.kernel(sv, xi)
+                        for alpha, sv, y_sv in zip(self.alphas, self.support_vectors, self.support_labels)
+                    )
+
+                # Margin check
+                if yi * decision < 1:
+                    alpha_t = 1 / (self.lambda_param * t)
+                    self.support_vectors.append(xi)
+                    self.support_labels.append(yi)
+                    self.alphas.append(alpha_t)
+
+    def project(self, X):
+        result = np.zeros(X.shape[0])
+        for i, x in enumerate(X):
+            result[i] = sum(
+                alpha * y_sv * self.kernel(sv, x)
+                for alpha, sv, y_sv in zip(self.alphas, self.support_vectors, self.support_labels)
+            )
+        return result
+
+    def predict(self, X):
+        return np.sign(self.project(X))
+
+class MultiClassPegasosSVM:
+    def __init__(self, kernel='rbf', lambda_param=0.01, max_iter=1000, batch_size=1, **kernel_params):
+        self.kernel = kernel
+        self.lambda_param = lambda_param
+        self.max_iter = max_iter
+        self.batch_size = batch_size
+        self.kernel_params = kernel_params
+        self.classifiers = {}
+
+    def fit(self, X, y):
+        self.classes = np.unique(y)
+        for cls in self.classes:
+            # Convert to binary problem: +1 vs -1
+            y_binary = np.where(y == cls, 1, -1)
+            clf = PegasosKernelSVM(
+                kernel=self.kernel,
+                lambda_param=self.lambda_param,
+                max_iter=self.max_iter,
+                batch_size=self.batch_size,
+                **self.kernel_params
+            )
+            clf.fit(X, y_binary)
+            self.classifiers[cls] = clf
+
+    def predict(self, X):
+        scores = {}
+        for cls, clf in self.classifiers.items():
+            scores[cls] = clf.project(X)
+        # Pick class with highest score
+        score_matrix = np.vstack([scores[c] for c in self.classes])
+        predictions = self.classes[np.argmax(score_matrix, axis=0)]
+        return predictions
+  </code></pre>
+
+  <a href="https://colab.research.google.com/drive/1dGRq5jijgRoOzkIKXmUjy8EgtZ8C7MdY?usp=sharing" target="_blank">
+  <button>Open in Google Colab</button>
+  </a>
+
+  <p>Training this on the iris dataset with a gaussian kernel we get 100% accuracy on our test set.</p>
+
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="QDA.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="#" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
