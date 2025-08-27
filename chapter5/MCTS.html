@@ -211,7 +211,7 @@ class MCTSNode:
   <div class="math">\(a^{*}=\arg\max_{a}\left[\bar{X}(s,a)+C\cdot\sqrt{\frac{\ln N(s)}{N(s,a)}}\right]\)</div>
 
   <p>Here C is the exploration parameter that controls how much we want exploration vs exploitation (theoretically is \(\sqrt{2}\) but is normally chosen emperically). Some other things to note is that
-    it is a sum of exploitation (\(\bar{X}(s,a) (knowledge from what we already know)\)) and exploitation (\(C\cdot\sqrt{\frac{\ln N(s)}{N(s,a)}}\)). So our function makes a decision based on knowns and
+    it is a sum of exploitation (\(\bar{X}(s,a)\) (knowledge from what we already know)) and exploitation (\(C\cdot\sqrt{\frac{\ln N(s)}{N(s,a)}}\)). So our function makes a decision based on knowns and
     also encourages some exploration.
   </p>
 
