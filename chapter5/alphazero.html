@@ -378,7 +378,7 @@ def alpha_zero_loss(pred_policy, pred_value, target_policy, target_value):
 
   <p>The final piece of the AlphaZero algorithm is that we train the network through playing with itself. How this is done is by setting both players in the game to the current network
     and running through a series of games (typically 100-1000) where the moves made are done using MCTS with PUCT. For every move in every game we store three variables \((s_{t},\pi_{t},z)\).
-    \(s_{t}\) is the board game state, is the target policy derived from \(\pi_{t}(a)=\frac{N(s_{t},a)^{\alpha}}{\sum_{b}N(s_{t},b)^{\alpha}}\) (\(\alpha\) is a temperature parameter to adjust exploration)
+    \(s_{t}\) is the board game state, \(\pi_{t}\) is the target policy derived from \(\pi_{t}(a)=\frac{N(s_{t},a)^{\alpha}}{\sum_{b}N(s_{t},b)^{\alpha}}\) (\(\alpha\) is a temperature parameter to adjust exploration)
     so it is a probability distribution over the possible actions at a given state and z which records if the current player won, lost or drew (-1,0,1) at the end of the game. At the end of these plays
     we have data which we can use to train our network to play better. We can repeat this process until the network is sufficiently trained. You can see this implemented in train.py and play.py.
   </p>
