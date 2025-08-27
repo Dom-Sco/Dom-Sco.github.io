@@ -126,31 +126,40 @@ code {
   "@type": "Article",
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://yourdomain.com/lda-tutorial.html"
+    "@id": "https://dom-sco.github.io/chapter5/MCTS.html"
   },
-  "headline": "Chapter 2.3: Linear Discriminant Analysis",
-  "description": "A beginner-friendly guide to Linear Discriminant Analysis (LDA) in machine learning, covering both classification and dimensionality reduction with math and code examples.",
+  "headline": "Chapter 5.1: Monte Carlo Tree Search",
+  "description": "A comprehensive guide to Monte Carlo Tree Search (MCTS) for board games like Connect Four. Learn the algorithm step-by-step including UCT formula, simulation rollouts, and Python code to build a working MCTS agent.",
   "author": {
     "@type": "Person",
     "name": "Dominic Scocchera"
   },
   "publisher": {
     "@type": "Organization",
-    "name": "Your Website Name",
+    "name": "Dom-Sco Tutorials",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://yourdomain.com/logo.png"
+      "url": "https://dom-sco.github.io/logo.png"
     }
   },
-  "datePublished": "2025-08-23",
-  "dateModified": "2025-08-23",
-  "image": "https://yourdomain.com/LDA.png",
+  "datePublished": "2025-08-27",
+  "dateModified": "2025-08-27",
+  "image": "https://dom-sco.github.io/images/mcts.png",
   "keywords": [
-    "Linear Discriminant Analysis", "Machine Learning", "LDA Tutorial", "Dimensionality Reduction", "Classification"
+    "Monte Carlo Tree Search",
+    "MCTS",
+    "UCT",
+    "Game AI",
+    "Connect Four AI",
+    "Tree Search Algorithm",
+    "Simulation",
+    "Exploration vs Exploitation",
+    "Reinforcement Learning",
+    "Python"
   ],
   "codeSampleType": "full",
   "programmingLanguage": "Python",
-  "articleSection": "Machine Learning",
+  "articleSection": "Reinforcement Learning",
   "isPartOf": {
     "@type": "CreativeWorkSeries",
     "name": "Machine Learning Tutorials"
@@ -191,7 +200,7 @@ class MCTSNode:
         self.untried_moves = state.get_legal_moves()
   </code></pre>
 
-  <p>Starting from some initial game state we perform the exploration as such: Traverse the tree via UCT (upper confidence trees),
+  <p>Starting from some initial game state we perform the exploration as such: Traverse the tree via UCT (upper confidence bound applied to trees),
     the formula is given below (the formula inside the optimisation problem) (\(a^{*}\) is the optimal move to make based on the current variables we have from our exploration of the game tree at our current node (current game state)).
     This traversal is done until we reach a node with unexplored actions (N(s,a) is 0 for all actions).
     We then add one new child node from the untried moves (randomly). We then play out a random game from that node (each player takes random moves until game end (i.e. a rollout)).
@@ -201,9 +210,12 @@ class MCTSNode:
 
   <div class="math">\(a^{*}=\arg\max_{a}\left[\bar{X}(s,a)+C\cdot\sqrt{\frac{\ln N(s)}{N(s,a)}}\right]\)</div>
 
-  <p>Here C is the exploration parameter that controls how much we want exploration vs exploitation (theoretically is \(\sqrt{2}\) but is normally chosen emperically).</p>
+  <p>Here C is the exploration parameter that controls how much we want exploration vs exploitation (theoretically is \(\sqrt{2}\) but is normally chosen emperically). Some other things to note is that
+    it is a sum of exploitation (\(\bar{X}(s,a) (knowledge from what we already know)\)) and exploitation (\(C\cdot\sqrt{\frac{\ln N(s)}{N(s,a)}}\)). So our function makes a decision based on knowns and
+    also encourages some exploration.
+  </p>
 
-  <p>This process is generally described in 4 steps (selection, expansion, simulation, backpropagation (not to be confused with backpropagation from neural networks, we aren't taking gradients)).
+  <p>The algorithm is generally described in 4 steps (selection, expansion, simulation, backpropagation (not to be confused with backpropagation from neural networks, we aren't taking gradients)).
     Selection is when we apply the UCT formula at each succesive round of child nodes to find the best path. We stop when we reach a layer of the tree with a child with which \(N(s,a)=0\). We
     then proceed to expansion where unless we reach a game over we choose a child node. Then we reach simulation where we perform a rollout from that child node. We then do backpropagation to update
     the values of the important variables of all the nodes we explored. We now expand our Node class to include functions to check for untried actions at a node (is_fully_expanded()), calculate the

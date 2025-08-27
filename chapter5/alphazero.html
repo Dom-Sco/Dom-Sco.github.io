@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chapter 5.1: AlphaZero</title>
+  <title>Chapter 5.2: AlphaZero</title>
   <meta name="description" content="A beginner-friendly guide to linear disciminant analysis in machine learning." />
 
 
@@ -126,31 +126,40 @@ code {
   "@type": "Article",
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://yourdomain.com/lda-tutorial.html"
+    "@id": "https://dom-sco.github.io/chapter5/alphazero.html"
   },
-  "headline": "Chapter 2.3: Linear Discriminant Analysis",
-  "description": "A beginner-friendly guide to Linear Discriminant Analysis (LDA) in machine learning, covering both classification and dimensionality reduction with math and code examples.",
+  "headline": "Chapter 5.2: AlphaZero",
+  "description": "An in-depth tutorial on AlphaZero, a self-play reinforcement learning algorithm. Learn how AlphaZero builds on Monte Carlo Tree Search (MCTS) and integrates deep neural networks for policy and value prediction, with full Python code for Connect Four.",
   "author": {
     "@type": "Person",
     "name": "Dominic Scocchera"
   },
   "publisher": {
     "@type": "Organization",
-    "name": "Your Website Name",
+    "name": "Dom-Sco Tutorials",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://yourdomain.com/logo.png"
+      "url": "https://dom-sco.github.io/logo.png"
     }
   },
-  "datePublished": "2025-08-23",
-  "dateModified": "2025-08-23",
-  "image": "https://yourdomain.com/LDA.png",
+  "datePublished": "2025-08-27",
+  "dateModified": "2025-08-27",
+  "image": "https://dom-sco.github.io/images/alphazero.png",
   "keywords": [
-    "Linear Discriminant Analysis", "Machine Learning", "LDA Tutorial", "Dimensionality Reduction", "Classification"
+    "AlphaZero",
+    "Monte Carlo Tree Search",
+    "PUCT",
+    "Reinforcement Learning",
+    "Deep Learning",
+    "Connect Four AI",
+    "Self-Play Training",
+    "Neural Networks",
+    "Game AI",
+    "AlphaGo"
   ],
   "codeSampleType": "full",
   "programmingLanguage": "Python",
-  "articleSection": "Machine Learning",
+  "articleSection": "Reinforcement Learning",
   "isPartOf": {
     "@type": "CreativeWorkSeries",
     "name": "Machine Learning Tutorials"
@@ -160,73 +169,196 @@ code {
 </head>
 <body>
 
-  <h1>Chapter 5.1: AlphaZero</h1>
+  <h1>Chapter 5.2: AlphaZero</h1>
 
   <p>One of the most impressive models in machine learning in recent years was Google Deepminds <a href="https://www.youtube.com/watch?v=WXuK6gekU1Y">AlphaGo model</a> which was able to beat
      the worlds top Go player. In this tutorial we will go over the basics of AlphaZero (similar to AlphaGo but trains against itself instead of past matches) and implement it for a much simpler game connect four. We will start by going over the neural network backbone of
-     the algorithm. We use a typical CNN architecture with input size of [batch_size, 2 (positions of player 1 pieces and positions of player 2's pieces), # of rows (6 for connect four), # of columns (7 for connect four)]. The output of this
+     the algorithm. AlphaZero is essentially an extension of the MCTS algorithm we covered in the previous article. The only change in our tree search is that we use another function instead of UCT
+     to evaluate how to traverse the tree. This function is called PUCT (predicter + upper confidence bound applied to trees).</p>
+
+  <div class="math">\(PUCT(s,a)=\bar{X}(s,a)+c_{\text{puct}}P(s,a)\frac{\sqrt{N(s)}}{1+N(s,a)}\)</div>
+  
+  <p>The only new term in this function is P(s,a), which is the prior probability of taking an action given by a neural network. The goal of evaluating choice in our search this way is to reduce the amount
+    of searches we have to perform in order to get strong performance and also improve upon the performance of UCT. Below we implement the algorithm. Note it is very similar to our previous MCTS but with
+    the ability to handle tensors (for our PyTorch model) and implementation of PUCT instead of UCT.
+</p>
+     
+  <pre><code class="language-python">
+class MCTSNode:
+    def __init__(self, game, parent=None, move=None):
+        self.game = game
+        self.parent = parent
+        self.move = move
+        self.children = {}
+        self.N = 0  # Visit count
+        self.W = 0  # Total value
+        self.Q = 0  # Mean value
+        self.P = None  # Prior probability from NN
+
+    def is_leaf(self):
+        return len(self.children) == 0
+
+def mcts_search(root_state, model, simulations=100, c_puct=1.0):
+    root = MCTSNode(root_state)
+
+    # Initial NN prediction
+    input_tensor = encode_board(root_state.board, root_state.player).unsqueeze(0)
+    logits, _ = model(input_tensor)
+    logits = logits.squeeze()
+    legal_moves = root_state.get_legal_actions()
+
+    mask = torch.zeros_like(logits, dtype=torch.bool)
+    mask[legal_moves] = True
+    masked_logits = logits.masked_fill(~mask, float('-1e9'))
+    policy = F.softmax(masked_logits, dim=0).detach().cpu().numpy()
+
+    root.P = policy
+
+    for _ in range(simulations):
+        node = root
+        path = []
+
+        # Selection
+        while not node.is_leaf():
+            best_score = -float("inf")
+            for a, child in node.children.items():
+                u = c_puct * (child.P if child.P is not None else 1.0) * math.sqrt(node.N) / (1 + child.N)
+                score = child.Q + u
+                if score > best_score:
+                    best_score = score
+                    best_move = a
+                    best_child = child
+            node = best_child
+            path.append(node)
+
+        # Expansion
+        if not node.game.is_terminal():
+            legal_moves = node.game.get_legal_actions()
+            for move in legal_moves:
+                next_game = node.game.move(move)
+                child = MCTSNode(next_game, node, move)
+                node.children[move] = child
+
+            expand_move = random.choice(legal_moves)
+            leaf_node = node.children[expand_move]
+
+            input_tensor = encode_board(leaf_node.game.board, leaf_node.game.player).unsqueeze(0)
+            logits, value = model(input_tensor)
+            logits = logits.squeeze()
+
+            leaf_legal = leaf_node.game.get_legal_actions()
+            mask = torch.zeros_like(logits, dtype=torch.bool)
+            mask[leaf_legal] = True
+            probs = F.softmax(logits.masked_fill(~mask, float('-1e9')), dim=0).detach().cpu().numpy()
+
+            for move in leaf_legal:
+                next_game = leaf_node.game.move(move)
+                child_node = MCTSNode(next_game, leaf_node, move)
+                child_node.P = probs[move]
+                leaf_node.children[move] = child_node
+
+            v = value.item()
+        else:
+            v = node.game.get_result()
+
+        # Backpropagation
+        for n in path:
+            n.N += 1
+            n.W += v
+            n.Q = n.W / n.N
+            v = -v
+
+    # Build π from visit counts
+    visit_counts = np.zeros(COLUMN_COUNT)
+    for move, child in root.children.items():
+        visit_counts[move] = child.N
+
+    pi = visit_counts / (np.sum(visit_counts) + 1e-8)
+    best_move = np.argmax(visit_counts)
+
+    return best_move, pi
+  </code></pre>
+  
+  <a href="https://github.com/Dom-Sco/Machine-Learning/tree/main/alphazero" target="_blank">
+  <button>Open the Github Repository</button>
+  </a>
+
+  <p>For our network we use a typical CNN architecture with input size of [batch_size, 2 (positions of player 1 pieces and positions of player 2's pieces), # of rows (6 for connect four), # of columns (7 for connect four)]. The output of this
      CNN is a probability distribution over all the possible moves to play next known as the policy head and here we will use log_softmax to convert the outputs of the network to a distribution.
      It also outputs a scalar (between -1 and 1) known as the value head that estimates the expected outcome of the current state (1 = certain win, 0 = draw, -1 = certain loss) and to constrain
      the output of the network to that range the tanh function is used.</p>
+
   <p>One final important thing to consider is illegal moves, for example if a column in connect four has reached the top you can't play
      another piece above it. To solve this we can first create a mask vector (M) over the columns (\(M_{i}\) is 1 if column i is legal and 0 if column i illegal). We can apply our mask to the output of the network by
-     applying the mask to the logits (We don't use softmax in the network to get probabilities, it is applied after) \(z_{i}'=z_{i}\) if \(M_{i}=1\) and \(z_{i}'=-10^{9}\) if \(M_{i}=0\)
-     (or any other large negative value). This ensures that after softmax is applied any illegal moves will have essentially a 0 probability of being chosen. We then renormalise and take the logarithm.
-      The idea behind this is that during training the network will naturally learn to not choose illegal moves. We can see all this implemented in the code below (note we will apply the masking after the output of the network and not inside of it).
+     and renormalise to give our decision. We don't worry about this mask during training (only evaluation) as during training the network will naturally learn to not choose illegal moves. 
+     We implement a ResNet in the code below.
   </p>
 
   <pre><code class="language-python">
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-def get_legal_moves(board):  # board shape: (6, 7)
-    return [1 if board[0][col] == 0 else 0 for col in range(7)]
-
-def apply_masked_softmax(logits, legal_moves_mask):
-    """
-    logits: [batch_size, 7]
-    legal_moves_mask: [7] — binary mask (1 for legal, 0 for illegal)
-    """
-    mask = legal_moves_mask.bool().unsqueeze(0)  # shape [1, 7]
-    masked_logits = logits.masked_fill(~mask, float('-1e9'))
-    probs = F.softmax(masked_logits, dim=1)  # shape [batch, 7]
-    return probs
-
-class AlphaZeroNet(nn.Module):
-    def __init__(self, board_height=6, board_width=7, action_size=7):
+class ResidualBlock(nn.Module):
+    def __init__(self, channels):
         super().__init__()
-        self.conv1 = nn.Conv2d(2, 64, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(channels)
 
-        # Policy head
+    def forward(self, x):
+        residual = x
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += residual
+        return F.relu(out)
+
+class AlphaZeroCNN(nn.Module):
+    def __init__(self, board_height=6, board_width=7, action_size=7, num_res_blocks=5):
+        super().__init__()
+        self.board_height = board_height
+        self.board_width = board_width
+        self.action_size = action_size
+
+        # Initial convolution
+        self.conv = nn.Conv2d(2, 64, kernel_size=3, padding=1)
+        self.bn = nn.BatchNorm2d(64)
+
+        # Residual tower
+        self.res_blocks = nn.Sequential(
+            *[ResidualBlock(64) for _ in range(num_res_blocks)]
+        )
+
+        # --- Policy Head ---
         self.policy_conv = nn.Conv2d(64, 2, kernel_size=1)
+        self.policy_bn = nn.BatchNorm2d(2)
         self.policy_fc = nn.Linear(2 * board_height * board_width, action_size)
 
-        # Value head
+        # --- Value Head ---
         self.value_conv = nn.Conv2d(64, 1, kernel_size=1)
+        self.value_bn = nn.BatchNorm2d(1)
         self.value_fc1 = nn.Linear(board_height * board_width, 64)
         self.value_fc2 = nn.Linear(64, 1)
 
-    def forward(self, x):
-        # Shared CNN layers
-        x = F.relu(self.conv1(x))  # input shape: [batch, 2, 6, 7]
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
+    def forward(self, x, legal_moves_mask=None):
+        # Shared body
+        x = F.relu(self.bn(self.conv(x)))       # [B, 64, 6, 7]
+        x = self.res_blocks(x)                  # [B, 64, 6, 7]
 
-        # Policy head — outputs raw logits 
-        p = F.relu(self.policy_conv(x))     # shape: [batch, 2, 6, 7]
-        p = p.view(p.size(0), -1)           # flatten to [batch, 2 * 6 * 7]
-        p = self.policy_fc(p)               # shape: [batch, action_size]
+        # --- Policy Head ---
+        p = F.relu(self.policy_bn(self.policy_conv(x)))  # [B, 2, 6, 7]
+        p = p.view(p.size(0), -1)                        # [B, 2*6*7]
+        p = self.policy_fc(p)                            # [B, 7] (logits)
 
-        # Value head
-        v = F.relu(self.value_conv(x))
-        v = v.view(v.size(0), -1)
-        v = F.relu(self.value_fc1(v))
-        v = torch.tanh(self.value_fc2(v))   # outputs in range [-1, 1]
+        if legal_moves_mask is not None:
+            p = p.masked_fill(~legal_moves_mask, float('-1e9'))
 
-        return p, v.squeeze(1)              # p = raw logits
+        log_probs = F.log_softmax(p, dim=1)              # [B, 7]
+
+        # --- Value Head ---
+        v = F.relu(self.value_bn(self.value_conv(x)))    # [B, 1, 6, 7]
+        v = v.view(v.size(0), -1)                        # [B, 6*7]
+        v = F.relu(self.value_fc1(v))                    # [B, 64]
+        v = torch.tanh(self.value_fc2(v))                # [B, 1]
+
+        return log_probs, v.squeeze(1)
   </code></pre>
 
   <p>The loss function we use use for the network in training is:</p>
@@ -238,146 +370,26 @@ class AlphaZeroNet(nn.Module):
   </p>
 
   <pre><code class="language-python">
-# Loss function (remember to take log_probs as output isn't softmaxed)
-def alpha_zero_loss(policy_logits, pred_value, target_policy, target_value):
-    log_probs = F.log_softmax(policy_logits, dim=1)
-    policy_loss = -torch.sum(target_policy * log_probs, dim=1).mean()
+def alpha_zero_loss(pred_policy, pred_value, target_policy, target_value):
+    policy_loss = -torch.sum(target_policy * pred_policy, dim=1).mean()
     value_loss = F.mse_loss(pred_value, target_value)
     return policy_loss + value_loss
   </code></pre>
 
-  <p>The other main part of this algorithm involves Monte Carlo Tree Search.</p>
+  <p>The final piece of the AlphaZero algorithm is that we train the network through playing with itself. How this is done is by setting both players in the game to the current network
+    and running through a series of games (typically 100-1000) where the moves made are done using MCTS with PUCT. For every move in every game we store three variables \((s_{t},\pi_{t},z)\).
+    \(s_{t}\) is the board game state, is the target policy derived from \(\pi_{t}(a)=\frac{N(s_{t},a)^{\alpha}}{\sum_{b}N(s_{t},b)^{\alpha}}\) (\(\alpha\) is a temperature parameter to adjust exploration)
+    so it is a probability distribution over the possible actions at a given state and z which records if the current player won, lost or drew (-1,0,1) at the end of the game. At the end of these plays
+    we have data which we can use to train our network to play better. We can repeat this process until the network is sufficiently trained. You can see this implemented in train.py and play.py.
+  </p>
 
-  <div class="math"></div>
-
-
-
-
-
- 
-
-
-
-
-
-  
-
-  <pre><code class="language-python">
-  def lda_discriminant_classifier(X_train, y_train):
-    """
-    Trains an LDA classifier using discriminant functions.
-
-    Parameters:
-        X_train (ndarray): Training data of shape (n_samples, n_features)
-        y_train (ndarray): Class labels of shape (n_samples,)
-    """
-    classes = np.unique(y_train)
-    n_features = X_train.shape[1]
-
-    # Compute shared covariance matrix
-    cov = np.cov(X_train.T, bias=False)
-    cov_inv = np.linalg.inv(cov)
-
-    # Compute means and priors for each class
-    means = []
-    priors = []
-    for c in classes:
-        X_c = X_train[y_train == c]
-        means.append(np.mean(X_c, axis=0))
-        priors.append(len(X_c) / len(X_train))
-    means = np.array(means)
-    priors = np.array(priors)
-
-    return cov_inv, means, priors
-
-
-# Define prediction function using discriminant function
-def predict(X, cov_inv, means, priors):
-    preds = []
-    for x in X:
-        scores = []
-        for i, c in enumerate(classes):
-            mu_k = means[i]
-            pi_k = priors[i]
-            delta_k = x @ cov_inv @ mu_k - 0.5 * mu_k @ cov_inv @ mu_k + np.log(pi_k)
-            scores.append(delta_k)
-        preds.append(classes[np.argmax(scores)])
-    return np.array(preds)
-  </code></pre>
-
-  <p>Running this on the iris dataset we get a prediction accuracy of 84.44%. We now write the function for dimensionality reduction:</p>
-
-  <pre><code class="language-python">
-  def lda_projection_matrix(X, y, num_components=None):
-    """
-    Solves the generalized eigenvalue problem for LDA and returns the projection matrix W.
-    
-    Parameters:
-        X (ndarray): Feature matrix of shape (n_samples, n_features)
-        y (ndarray): Class labels of shape (n_samples,)
-        num_components (int or None): Number of linear discriminants to return (<= C - 1)
-        
-    Returns:
-        W (ndarray): Projection matrix of shape (n_features, num_components)
-    """
-    classes = np.unique(y)
-    n_features = X.shape[1]
-    n_classes = len(classes)
-
-    # Compute overall mean
-    mean_total = np.mean(X, axis=0)
-
-    # Initialize scatter matrices
-    Sw = np.zeros((n_features, n_features))  # Within-class scatter
-    Sb = np.zeros((n_features, n_features))  # Between-class scatter
-
-    for c in classes:
-        X_c = X[y == c]
-        mean_c = np.mean(X_c, axis=0)
-        n_c = X_c.shape[0]
-
-        # Within-class scatter
-        Sw += (X_c - mean_c).T @ (X_c - mean_c)
-
-        # Between-class scatter
-        mean_diff = (mean_c - mean_total).reshape(-1, 1)
-        Sb += n_c * (mean_diff @ mean_diff.T)
-
-    # Solve generalized eigenvalue problem: Sb w = λ Sw w
-    eigvals, eigvecs = np.linalg.eig(np.linalg.pinv(Sw) @ Sb)
-
-    # Sort eigenvectors by eigenvalue magnitude (descending)
-    sorted_indices = np.argsort(np.real(eigvals))[::-1]
-    eigvecs = np.real(eigvecs[:, sorted_indices])
-
-    # Select top components
-    if num_components is None:
-        num_components = n_classes - 1
-    W = eigvecs[:, :num_components]
-
-    return W
-  </code></pre>
-
-  <a href="https://colab.research.google.com/drive/1a6WrqZDvXukSdl6uPUHDUSsPM3WPx53k?usp=sharing" target="_blank">
-  <button>Open in Google Colab</button>
-  </a>
-
-<p>We use this projection function on the iris data set and we get the following plot:</p>
-
-<div style="text-align: center; margin-top: 40px;">
-    <img src="LDA.png" alt="Plot of iris data after projection" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <div style="font-size: 14px; color: #555; margin-top: 8px;">Figure: Plot of iris data after projection</div>
-</div>
-
-<p>Here we can indeed see its been reduced to \(K-1=3-1=2\) dimensions and in such a way that the classes are seperated. As an excercise use this projected data in the prediction model and see if you
-    get an improved accuracy compared to what we got above (84.44%).
-</p>
+  <p>After all this is done we will have an intelligent agent we can play against in connect four. (For anyone reading this now the network is still training I will post the rest of this tutorial in a few days)</p>
 
 <!-- Bottom Navigation Bar -->
 <footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
   <div style="margin-bottom: 10px;">
     <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
-    <a href="#" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="MCTS.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
     <a href="#" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
     <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
   </div>
