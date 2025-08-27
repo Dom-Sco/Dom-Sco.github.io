@@ -289,7 +289,7 @@ def mcts_search(root_state, model, simulations=100, c_puct=1.0):
      the output of the network to that range the tanh function is used.</p>
 
   <p>One final important thing to consider is illegal moves, for example if a column in connect four has reached the top you can't play
-     another piece above it. To solve this we can first create a mask vector (M) over the columns (\(M_{i}\) is 1 if column i is legal and 0 if column i illegal). We can apply our mask to the output of the network by
+     another piece above it. To solve this we can first create a mask vector (M) over the columns (\(M_{i}\) is 1 if column i is legal and 0 if column i illegal). We can apply our mask to the output of the network
      and renormalise to give our decision. We don't worry about this mask during training (only evaluation) as during training the network will naturally learn to not choose illegal moves. 
      We implement a ResNet in the code below.
   </p>
