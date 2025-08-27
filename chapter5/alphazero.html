@@ -172,8 +172,7 @@ code {
   <h1>Chapter 5.2: AlphaZero</h1>
 
   <p>One of the most impressive models in machine learning in recent years was Google Deepminds <a href="https://www.youtube.com/watch?v=WXuK6gekU1Y">AlphaGo model</a> which was able to beat
-     the worlds top Go player. In this tutorial we will go over the basics of AlphaZero (similar to AlphaGo but trains against itself instead of past matches) and implement it for a much simpler game connect four. We will start by going over the neural network backbone of
-     the algorithm. AlphaZero is essentially an extension of the MCTS algorithm we covered in the previous article. The only change in our tree search is that we use another function instead of UCT
+     the worlds top Go player. In this tutorial we will go over the basics of AlphaZero (similar to AlphaGo but trains against itself instead of past matches) and implement it for a much simpler game connect four. AlphaZero is essentially an extension of the MCTS algorithm we covered in the previous article. The only change in our tree search is that we use another function instead of UCT
      to evaluate how to traverse the tree. This function is called PUCT (predicter + upper confidence bound applied to trees).</p>
 
   <div class="math">\(PUCT(s,a)=\bar{X}(s,a)+c_{\text{puct}}P(s,a)\frac{\sqrt{N(s)}}{1+N(s,a)}\)</div>
