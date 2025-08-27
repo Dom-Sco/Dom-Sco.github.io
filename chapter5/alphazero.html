@@ -365,7 +365,7 @@ class AlphaZeroCNN(nn.Module):
 
   <div class="math">\(\mathcal{L}=\mathcal{L}_{\text{value}}+\mathcal{L}_{\text{policy}}=(v-z)^{2}-\sum_{i}\pi_{i}\log p_{a}\)</div>
   
-  <p>Where v is the predicted value from the network (between -1 and 1), z is the actual game outcome (-1, 0 or 1), \(\pi\) is the target policy from Monte Carlo Tree search (we'll cover this soon) and p is the
+  <p>Where v is the predicted value from the network (between -1 and 1), z is the actual game outcome (-1, 0 or 1), \(\pi\) is the target policy from Monte Carlo Tree search and p is the
     predicted policy from the network (after softmax over the logits). Below is the loss function in code.
   </p>
 
