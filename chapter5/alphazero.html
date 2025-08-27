@@ -361,7 +361,7 @@ class AlphaZeroCNN(nn.Module):
         return log_probs, v.squeeze(1)
   </code></pre>
 
-  <p>The loss function we use use for the network in training is:</p>
+  <p>The loss function we use for the network in training is:</p>
 
   <div class="math">\(\mathcal{L}=\mathcal{L}_{\text{value}}+\mathcal{L}_{\text{policy}}=(v-z)^{2}-\sum_{i}\pi_{i}\log p_{a}\)</div>
   
