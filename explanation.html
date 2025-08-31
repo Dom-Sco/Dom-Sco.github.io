@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DataNest</title>
+  <meta name="description" content="A beginner-friendly guide to linear disciminant analysis in machine learning." />
+
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+
+
+</head>
+<body>
+
+  <h1>DataNest</h1>
+
+ <p>To solve the data centre location problem, we will design a cost function that gives a value for every longitude and latitude, representing how suitable a given coordinate is for a data centre (high values indicate poor locations and low values indicate good locations). This cost function also utilises publicly available data to guide our location search. We want locations that optimise performance, minimise latency, operate smoothly, and consume energy efficiently. To do this, we shall consider several variables and datasets.</p>
+
+<p>We consider five different sets of data for our cost function. The first two are based on electricity (obviously important for data centres), the next one is based on water sources (we need water for cooling in data centres), the next one is based on population, as this gives an idea of service coverage for data transmission. We also assume this is a good approximation of where telecommunications networks will be prevalent (low latency). We make this assumption as telecommunications network data doesn't seem to be easily accessible to the public (proprietary datasets). Finally, we consider temperature, as we don't want data centres operating in hot areas of Australia (more cooling is required). For the following functions, <code>p</code> is our longitude and latitude coordinate.</p>
+
+<div class="math">\(\text{Cost}_{Station}(p)=\sum_{i}\frac{Capacity_{i}\cdot w_{green,i}}{1+d_{i}}\)</div>
+
+<p>Here we are summing over all power stations that are within a 300 km radius of our coordinate. Capacity is the output of the power station (we estimated this output based on how the power was generated). 
+  \(w_{green,i}\) is a coefficient we multiply by, based on whether the power generation is green or not (1.2 if renewable, and 1.0 if not). Finally, we have \(d_{i}\), which is the distance from our point to the power station (we add 1 to it in the denominator to avoid dividing by zero and generating extreme values for distances &lt; 1).</p>
+
+<div class="math">\(\text{Cost}_{Substation}=\ln\left(\sum_{i}\frac{V_{i}}{1+d_{i}}\right)\)</div>
+
+<p>Here, \(V_{i}\) is the voltage that the substations regulate, and again \(d_{i}\) is the distance to the substation (we again sum over all substations within a 300 km radius of our coordinate). Note that we take the natural logarithm of this sum, as during testing we found these values to be abnormally large compared to the other parts of our cost function.</p>
+
+<div class="math">\(\text{Cost}_{Water}=\sum_{i}\frac{A_{i}}{d_{i}}\)</div>
+
+<p>In this term, we again sum over all lakes within a 300 km radius. However, we did a lot of preprocessing to exclude water sources that are not perennial (not full-year-round), and also to only consider large water sources. Here we sum over the surface area (\(A_{i}\)) of the water sources (a good indication of water availability), divided by the distance to those water sources.</p>
+
+<div class="math">\(\text{Cost}_{Population}=200\cdot\exp(-0.1\cdot\frac{\text{population}}{\text{area}})\)</div>
+
+<p>Here, we only consider the closest population centre to our coordinate. We then take the population and divide it by the area that the population centre covers (normalisation). We use this exponential function to give high scores for low population density. The hyperparameters (200 and 0.1) were chosen because they give this part of the cost function values that align well with the rest of the function.</p>
+
+<div class="math">\(\text{Cost}_{Temperature}=\frac{200\cdot\text{temp}_{meanmax}+\text{longitude}}{1+d_{i}}\)</div>
+
+<p>Here, 200 is a hyperparameter (again chosen because it aligns well with the other values of the cost function), and we are just looking at the closest temperature recording station. The average maximum temperature is used, as this is a good estimate of the worst-case scenario in temperature for the data centre. We also add the longitude, as increasing it tends to correlate with an increase in temperature. Again, we divide by the distance to the station that recorded the temperatures (plus 1).</p>
+
+<div class="math">\(\text{Cost}(p)=v\cdot\text{Cost}_{Station}(p)+w\cdot\text{Cost}_{Substation}(p)+x\cdot\text{Cost}_{Water}(p)+y\cdot\text{Cost}_{Population}(p)+z\cdot\text{Cost}_{Temperature}(p)\)</div>
+
+<p>Finally, we sum all these costs together, multiplying each by coefficients which describe the importance of each term to the cost (<code>v, w, x, y, z</code>) to get the cost of placing a data centre at a certain location. The coefficients are 35, 15, 10, 5 and 15 respectively (electricity consumption is very important, temperature and water sources are important, and population density is less important — it was a weak assumption we made due to lack of access to better data).</p>
+
+<div style="text-align: center; margin-top: 40px;">
+  <img src="Figure_1.png" alt="Plot showing paths the optimisation took given different starting points" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+  <div style="font-size: 14px; color: #555; margin-top: 8px;">Figure: Plot of optimisation</div>
+</div>
+
+<p>Running L-BFGS to optimise our cost function with starting values at major Australian cities, we see that the optimisation tends to move to coastal regions. This is expected, as these regions contain the ideal climate and resources needed for data centres.</p>
+
+<div style="text-align: center; margin-top: 40px;">
+  <img src="heatmap.png" alt="Heatmap of cost function scores evaluated across Australia" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+  <div style="font-size: 14px; color: #555; margin-top: 8px;">Figure: Heatmap of cost function across Australia</div>
+</div>
+
+<p>Looking at the heat map for values of the cost function across Australia, we again see that coastal regions have lower cost (except in some places up north that lack infrastructure). Some particularly promising locations appear to be around Perth, South East Queensland, Darwin, and Adelaide.</p>
+
+<p>Moving forward with this model, we would need to integrate smart grid data for real-time energy usage across Australia to optimise data centre performance (possibly training an RNN or transformer model to predict time series data using AI). We didn’t have access to good data for this, so we didn’t integrate it into the model. We could also integrate information about fibre optic infrastructure if we had access to it (proprietary data). In terms of regulations, we can examine the locations our current model selected and seek expert opinions about how the laws and regulations of each location will affect building and maintaining data centres, and how they will affect operations. Finally, in the future, we may wish to consider data about floods and bushfires (natural disasters that regularly affect Australia) to further improve the performance of our cost function.</p>
+
+
+</body>
+</html>
