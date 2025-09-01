@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 2.7: Perceptron</title>
+  <meta name="description" content="A beginner-friendly guide to logistic regression in machine learning." />
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Chapter 2.7: Perceptron",
+  "description": "A beginner-friendly explanation of the perceptron algorithm in machine learning, including its mathematical formulation, training rules, and Python implementation.",
+  "author": {
+    "@type": "Person",
+    "name": "Dominic Scocchera"
+  },
+  "datePublished": "2025-08-27",
+  "dateModified": "2025-08-27",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Dominic Scocchera",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://dom-sco.github.io/assets/logo.png"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://dom-sco.github.io/chapter2/perceptron"
+  },
+  "keywords": [
+    "perceptron",
+    "machine learning",
+    "binary classifier",
+    "subgradient descent",
+    "neural networks",
+    "linear classifiers",
+    "python implementation"
+  ],
+  "inLanguage": "en",
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://dom-sco.github.io/chapter2/perceptronor.png",
+    "height": 500,
+    "width": 800
+  }
+}
+</script>
+</head>
+<body>
+
+  <h1>Chapter 2.7: Perceptron</h1>
+
+  <p>The long awaited moment has finally arrived. We are now going to look at the most basic building block of neural networks, the perceptron. The perceptron on its own
+    is just a binary linear classifier. It was orignally proposed by Frank Rosenblatt in 1958. In this model we have an input vector of \(x=(x_{1},...,x_{n})\), weights \(w=(w_{1},...,w_{n})\) and bias \(b\).
+    In this model we classify by inputing into a sign function the inner product of the weights and input vector and adding the bias:
+  </p>
+
+  <div class="math">\(f(w\cdot x + b)=\begin{cases}
+    1 & \text{if } w\cdot x + b > 0\\
+    0 & \text{otherwise}    
+    \end{cases}\)</div>
+  
+  <p>To train the model and learn the weights we can update our weights and bias via subgradient descent:
+  </p>
+
+  <div class="math">\(\begin{align}w^{t+1}&=w^{t}+\eta X^{T}e\\
+    b^{t+1}&=b^{t}+\eta\sum_{i} e_{i}
+    \end{align}\)</div>
+
+<p>Here \(\eta\) is our learning rate, \(X^{T}\) is our data matrix and \(e\) is our error vector (\(e_{i}=y_{i,\text{true}}-y_{i,\text{prediction}}\)). Implementing this into code
+    we get:
+</p>
+
+<pre><code class="language-python">
+class Perceptron:
+    def __init__(self, learning_rate=0.1, n_iters=10):
+        self.lr = learning_rate
+        self.n_iters = n_iters
+        self.weights = None
+        self.bias = None
+
+    def fit(self, X, y):
+      n_samples, n_features = X.shape
+      self.weights = np.zeros(n_features)
+      self.bias = 0
+
+      y_ = np.where(y == 0, -1, 1)
+
+      for _ in range(self.n_iters):
+          # Compute predictions for all samples
+          linear_output = X @ self.weights + self.bias
+          predictions = np.sign(linear_output)
+
+          # Handle sign(0) = 1 (to stay consistent)
+          predictions[predictions == 0] = 1
+
+          # Find misclassified samples
+          misclassified = y_ * predictions <= 0
+
+          # Apply updates using only misclassified samples
+          if np.any(misclassified):
+              X_mis = X[misclassified]
+              y_mis = y_[misclassified].reshape(-1, 1)
+
+              # Update weights and bias
+              self.weights += self.lr * np.sum(X_mis * y_mis, axis=0)
+              self.bias += self.lr * np.sum(y_mis)
+
+
+    def predict(self, X):
+        linear_output = np.dot(X, self.weights) + self.bias
+        return np.where(linear_output >= 0, 1, 0)
+  </code></pre>
+
+  <a href="https://colab.research.google.com/drive/1RdrIQzzX2ocZT4lLxSfK2qmfbihJ_fSw?usp=sharing" target="_blank">
+  <button>Open in Google Colab</button></a>
+
+  <p>Training it on the OR logic function we get:</p>
+
+  <div style="text-align: center; margin-top: 40px;">
+    <img src="perceptronor.png" alt="Perceptron for OR function" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <div style="font-size: 14px; color: #555; margin-top: 8px;">Figure: Plot of the OR function and the learned perceptron boundary</div>
+  </div>
+
+  <p>We can also train this on any other linearly seperable data and can extend it to non-linearly seperable data using the kernel trick covered in the SVM tutorial.</p>
+
+
+
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="naivebayes.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="#" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
