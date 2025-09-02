@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chapter 3.1: K-Means Clustering</title>
+  <meta name="description" content="A beginner-friendly guide to k-means clustering in machine learning." />
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Chapter 3.1: K-Means Clustering",
+  "description": "A beginner-friendly guide to k-means clustering in machine learning, including mathematical formulation, iterative updates, and Python implementation.",
+  "author": {
+    "@type": "Person",
+    "name": "Dominic Scocchera"
+  },
+  "datePublished": "2025-08-28",
+  "dateModified": "2025-08-28",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Dominic Scocchera",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://dom-sco.github.io/assets/logo.png"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://dom-sco.github.io/chapter3/kmeans"
+  },
+  "keywords": [
+    "k-means clustering",
+    "unsupervised learning",
+    "machine learning",
+    "clustering",
+    "silhouette score",
+    "elbow method",
+    "within-cluster sum of squares",
+    "python k-means",
+    "math behind k-means"
+  ],
+  "inLanguage": "en",
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://dom-sco.github.io/chapter3/kmeans.png",
+    "height": 500,
+    "width": 800
+  }
+}
+</script>
+</head>
+<body>
+
+  <h1>Chapter 3.1: K-Means Clustering</h1>
+
+  <p>In this chapter we will have a look at other methods in machine learning which don't quite fall under the umbrella of regression or classification, or that extend some of the ideas
+    discussed in previous articles. The first algorithm we will be looking at is K-Means, which is used to cluster data. It is an unsupervised algorithm, meaning we don't 
+    require prior knowledge of class labels. The algorithm will find clusters of data that belong to different classes, k (which we set) classes to be exact. We are given
+    our data, \(X=(x_{1},...,x_{n})\) where each \(x_{i}\in\mathbb{R}^{d}\) and we want to partition them into k clusters \(C=\{C_{1},...,C_{k}\}\) each with a centroid
+    \(\mu_{j}\in\mathbb{R}^{d}\). The overall goal of k-means is to minimise the total within-cluster sum of squares:
+  </p>
+
+  <div class="math">\(\arg\min_{C}WCSS(k)=\arg\min_{C}\sum_{j=1}^{k}\sum_{x_{i}\in C_{j}}\lVert x_{i} - \mu_{j} \rVert^{2} \)</div>
+
+  <p>We solve this through an iterative procedure. We start by randomly initialising \(k\) data points as the initial centroids (\(\mu_{1}^{(0)},...,\mu_{k}^{(0)}\)).
+    We then assign each data point \(x_{i}\) to the nearest centroid based on minimal distance, i.e.:
+  </p>
+
+  <div class="math">\(\text{Cluster for }x_{i}:\text{    }j=\arg\min_{1\leq j \leq k}\lVert x_{i} - \mu_{j} \rVert^{2} \)</div>
+
+  <p>We then update our centroids by calculating the mean of all the points assigned to that cluster:</p>
+
+  <div class="math">\(\mu_{j}=\frac{1}{|C_{j}|}\sum_{x_{i}\in C_{j}}x_{i}\)</div>
+
+  <p>We then repeat assigning each data point to the nearest centroid and recalculating the new centroids until either a maximum number of iterations is reached or:</p>
+
+  <div class="math">\(\lVert\mu_{j}^{(t)} - \mu_{j}^{(t-1)}\rVert<\epsilon, \text{   }\forall j\)</div>
+
+  <p>Where \(\epsilon\) is a tolerance parameter (stop when updating centroids doesn't change them very much). Implementing this in code we get:</p>
+
+<pre><code class="language-python">
+class KMeans:
+    def __init__(self, n_clusters=3, max_iters=100, tol=1e-4, random_state=None):
+        self.n_clusters = n_clusters
+        self.max_iters = max_iters
+        self.tol = tol
+        self.random_state = random_state
+        self.centroids = None
+
+    def fit(self, X):
+        if self.random_state:
+            np.random.seed(self.random_state)
+
+        # Initialize centroids randomly from data points
+        random_indices = np.random.choice(len(X), self.n_clusters, replace=False)
+        self.centroids = X[random_indices]
+
+        for i in range(self.max_iters):
+            # Assign clusters
+            clusters = self._assign_clusters(X)
+
+            # Compute new centroids
+            new_centroids = np.array([X[clusters == k].mean(axis=0) if len(X[clusters == k]) > 0 else self.centroids[k]
+                                      for k in range(self.n_clusters)])
+
+            # Check for convergence
+            if np.all(np.linalg.norm(new_centroids - self.centroids, axis=1) < self.tol):
+                break
+
+            self.centroids = new_centroids
+
+    def _assign_clusters(self, X):
+        # Compute distances to centroids
+        distances = np.linalg.norm(X[:, np.newaxis] - self.centroids, axis=2)
+        # Assign each point to closest centroid
+        return np.argmin(distances, axis=1)
+
+    def predict(self, X):
+        return self._assign_clusters(X)
+  </code></pre>
+
+  <a href="https://colab.research.google.com/drive/1Lz4l3LYq3Jzr9TNzrMZEBEXF9pFts98C?usp=sharing" target="_blank">
+  <button>Open in Google Colab</button></a>
+
+  <p>Training it on some randomly generated data and setting the number of centroids to three we get:</p>
+
+  <div style="text-align: center; margin-top: 40px;">
+    <img src="kmeans.png" alt="k-means trained on data" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <div style="font-size: 14px; color: #555; margin-top: 8px;">Figure: Plot of the clusters and the learned centroids</div>
+  </div>
+
+  <p>In order to choose the best \(k\) there are a few methods. The first obvious one is using domain knowledge, e.g. if we were to train it on the iris dataset
+    we would choose \(k=3\) as there are three species. Another method is to plot the \(WCSS(k)\) against \(k\) and choose the \(k\) at which \(WCSS(k)\) doesn't increase by much.
+    The final method I'll discuss is the silhouette score which measures how well a point fits into its cluster compared to others. The silhouette score for a single data point \(x_{i}\) is: 
+  </p>
+
+  <div class="math">\(s(i)=\frac{b(i)-a(i)}{\max\{a(i),b(i)\}}\)</div>
+
+  <p>Where \(a(i)\) is the average distance of \(x_{i}\) to other points in its own cluster and \(b(i)\) is the lowest average distance of \(x_{i}\) to points in any other cluster.
+    If \(s(i)\) is close to 1 it is well clustered, if it is close to 0 the point is on the boundary and if it is less than 0 the point is misclassified. We then compute the average score for all
+    points and choose the \(k\) that gives the highest average silhouette. There are a few other ways to choose \(k\) but thats all I'll cover here.
+  </p>
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="tree.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Previous</a> |
+    <a href="#" style="margin: 0 10px; color: #007acc; text-decoration: none;">Next</a> |
+    <a href="../tutorialhub.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Tutorial Hub</a>
+  </div>
+  <div>© 2025 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
