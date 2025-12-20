@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chapter 5.2: AlphaZero</title>
-  <meta name="description" content="A beginner-friendly guide to linear disciminant analysis in machine learning." />
+  <meta name="description" content="A beginner-friendly guide to the alpha zero machine learning algorithm." />
 
 
   <!-- Load MathJax for LaTeX rendering -->
@@ -382,7 +382,9 @@ def alpha_zero_loss(pred_policy, pred_value, target_policy, target_value):
     we have data which we can use to train our network to play better. We can repeat this process until the network is sufficiently trained. You can see this implemented in train.py and play.py.
   </p>
 
-  <p>After all this is done we will have an intelligent agent we can play against in connect four. (For anyone reading this now the network is still training I will post the rest of this tutorial in a few days)</p>
+  <p>After all this is done we will have an intelligent agent we can play against in connect four. In comparison to the MCTS we can now get competitive performance with just 10000 iterations (MCTS achieved competitive performance with 20000).
+    From this we see that the neural network is able to provide more guidance into policy selection (guides exploration) then just the purely analytical exploitation/exploration model of MCTS.
+  </p>
 
 <!-- Bottom Navigation Bar -->
 <footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
