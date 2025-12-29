@@ -194,11 +194,12 @@ code {
 
   <h1>Chapter 6.1: Bayesian Inference With Pyro</h1>
 
-  <p>So far in these tutorials we have mostly looked at deterministic models, models that provide one output (for example the model might output something like \(\mathbb{E}[P(y|x)]\) (regression) or \(\arg\max P(y|x)\) (classification)).
-    In Bayesian inference we are attempting to estimate a distribution (instead of estimating values (regression) or classes (classification)), therefore we call it a probablistic model.
-    In Bayesian inference we start with \(P_{\theta}(x,z)\) where x is the observed data, z is the latent variables (possibly unobserved data or model parameters) and \(\theta\) are
-    the observed model parameters. These methods are especially helpful if you are dealing with missing data or you don't have much data and know a lot about how it was generated. In order to help model this effectively we assume that all the latent variables follow some distribution, possibly different distributions if there are multiple latent variables.
-    The goal of Bayesian inference is to work out the posterior distribution: 
+  <p>So far in these tutorials we have mostly looked at deterministic models, models that provide one output. For example the model might return an expected value such as \(\mathbb{E}[P(y|x)]\) in regression or a point estimate such as \(\arg\max P(y|x)\) in classification.
+    In these settings, the goal is to compute a specific value or class label given the inputs.</p>
+
+  <p>In Bayesian inference, by contrast, the goal is to estimate an entire distribution rather than a single value or class, and models of this form are therefore called probabilistic models.
+    We begin with a joint distribution \(P_{\theta}(x,z)\) where x denotes the observed data, z denotes latent variables (which may represent unobserved data or model parameters), and \(\theta\) denotes
+    fixed model parameters. Bayesian methods are particularly useful when data are scarce or partially missing, or when strong prior knowledge about the data-generating process is available. To model this uncertainty explicitly, we assume that the latent variables follow specified probability distributions. The goal of Bayesian inference is then to compute the posterior distribution: 
   </p>
 
   <div class="math">\(P_{\theta}(z|x)=\frac{P_{\theta}(x,z)}{P_{\theta}(x)}\)</div>
@@ -209,12 +210,13 @@ code {
 
   <p>Which is usually intractable (sometimes it is solvable by hand but even in simple cases like this one from <a href="https://en.wikipedia.org/wiki/Variational_Bayesian_methods#A_basic_example">wikipedia</a> the derivation can 
     be quite lengthy). Pyro solves this by providing ways to approximate or sample from this posterior, with support for PyTorch and a wide variety of probability distributions.
-    In order to understand what Pyro accomplishes we will start with the background theory first and then work our way towards some examples. To start recall that 
-    from basic probability that a random variable Z is a function from an outcome space \(\Omega\) to \(\mathbb{R}\) and from a <a href="https://en.wikipedia.org/wiki/Probability_space"> measure theory</a> perspective 
+    In order to understand what Pyro accomplishes we will start with the background theory first and then work our way towards some examples. 
+    First we want to say that you do not need to be comfortable with measure theory to use Pyro; the point of this perspective is simply to make precise what it means for a program to define a distribution.
+    To start recall that from basic probability that a random variable Z is a function from an outcome space \(\Omega\) to \(\mathbb{R}\) and from a <a href="https://en.wikipedia.org/wiki/Probability_space"> measure theory</a> perspective 
     \((\Omega,\mathcal{F},\mathbb{P})\) is a probability space and \(Z:\Omega\rightarrow \mathcal{Z}\), i.e. the distribution of Z is the pushforward measure \(\mu_{Z}(A)=\mathbb{P}(Z\in A)\).
     So already "probability = measure induced by a function" and Pyro generalises this to "the function is a program".</p>
   
-  <p>So if we have a probablistic program Pyro will consider it a function, a function that takes no randomness as input, internally calls random samplers and returns values and samples. Below is a basic example:</p>
+  <p>So if we have a probabilistic program Pyro will consider it a function, a function that takes no randomness as input, internally calls random samplers and returns values and samples. Below is a basic example:</p>
      
   <pre><code class="language-python">
 def model():
@@ -230,7 +232,7 @@ def model():
     specifies how values are sampled, in what order and with what dependencies. In our example the joint probability measure would be \(\mu_{\theta}(dz,dx)\). It is important
     to note that the measure is not written explicitly it is defined operationally by the program and this is why we say "the model defines a distribution of execution traces".
     Another important thing to note is that this is more general than graphical models such as <a href="https://en.wikipedia.org/wiki/Bayesian_network">Bayesian networks</a> as they have
-    a fixed number of variables and fixed dependency graph, whereas a probablistic program has a random number of variables and a control flow that depends on randomness. A small example program of this can be seen below:</p>
+    a fixed number of variables and fixed dependency graph, whereas a probabilistic program has a random number of variables and a control flow that depends on randomness. A small example program of this can be seen below:</p>
 
   <pre><code class="language-python">
 n = sample(Poisson(3))
@@ -248,7 +250,7 @@ x = sample(Normal(z,1), obs=1.5)
 
   <div class="math">\(\mu_{\theta}(dz|x=1.5)=\frac{\mu_{\theta}(dz|dx=1.5)}{\mu_{(dx=1.5)}}\)</div>
 
-  <p>So conditioning doesn't modify the program it modifies the measure it induces. Similarly this means that we can mix discrete and continous variables (only modifies the measure not the program).
+  <p>This is just the measure-theoretic analogue of Bayes’ rule; the denominator is the normalising constant ensuring the result is a probability measure. So conditioning doesn't modify the program it modifies the measure it induces. Similarly this means that we can mix discrete and continuous variables (only modifies the measure not the program).
    The final case to consider is with control flow which we will illustrate with the example below: 
   </p>
 
@@ -271,13 +273,13 @@ else:
   <p>Now we understand how Pyro models probability through programs we can move on to how it finds the posterior (\(P_{\theta}(z|x)\)) for bayesian inference.
     Pyro accomplishes this through SVI (stochastic variational inference) which optimises over distributions, i.e. instead of computing the posterior, we search for the closest
     distribution within a chosen variational family of distributions. The posterior is an element of \(\mathcal{P}(\mathcal{Z})=\{\text{all probability measures on }\mathcal{Z}\}\), 
-    which is infinite dimensional and not parameterisable in general, thus you can not optimise over this space directly. What choosing a variational family means is we choose a restricted family 
+    which is infinite dimensional and not parameterisable in general, thus you can not optimise over this space directly (intuitively, this space is too large to search directly). What choosing a variational family means is we choose a restricted family 
     \(\mathcal{Q}=\{q_{\phi}(z):\phi\in\Phi\}\), then solve \(q_{\phi}^{*}=\arg\min_{q\in\mathcal{Q}}\text{KL}(q||p_{\theta}(\cdot|x))\) (we place q first in the formula as this enforces mode seeking (maximums of distributions) and zero forcing (if q(z)>0 then p(z|x) must be >0)), which is a projection problem in probability space where we are
     projecting onto a smaller set (Here KL is the KL divergence between probability distributions). It is also important to note here that \(q_{\phi}\) is a measure induced by a program
     and when using Pyro this is induced by the guide program (which we will soon see) (the model programs we saw above induce \(P_{\theta}(x,z)\)).
 </p>
 
-  <p>The most common choice for \(q_{\phi}(z)\) is some sort of <a href="https://en.wikipedia.org/wiki/Variational_Bayesian_methods#Factorized_approximation">factorised approximation</a> of the posterior distribution. The
+  <p>The most common variational aproximation in explicit graphical models for \(q_{\phi}(z)\) is some sort of <a href="https://en.wikipedia.org/wiki/Variational_Bayesian_methods#Factorized_approximation">factorised approximation</a> of the posterior distribution. The
     example here is from the wikipedia article that was referenced earlier, also note that we don't take expectations as we are not explicitly calculating anything (refer to the <a href="https://en.wikipedia.org/wiki/Variational_Bayesian_methods#Mean_field_approximation">mean field</a>
     approximation here (mean field approximation is also commonly used in Pyro)). However here it is not a formula but again a program like with the model, so choosing a variational
     family means choosing a class of programs indexed by \(\phi\).</p>
@@ -295,7 +297,7 @@ else:
 
 <p>From this it's not too hard to show:</p>
 
-<div class="math">\(\mathcal{L}=\log p_{\theta}(x)-\log\mathbb{E}_{z\sim q_{\phi}(z|x)}\left[\frac{p_{\theta}(x,z)}{q_{\phi}(z|x)}\right]=\log p_{\theta}(x)-\text{KL}(q_{\phi}(z|x)||p_{\theta}(x,z))\)</div>
+<div class="math">\(\mathcal{L}=\log p_{\theta}(x)-\log\mathbb{E}_{z\sim q_{\phi}(z|x)}\left[\frac{p_{\theta}(x,z)}{q_{\phi}(z|x)}\right]=\log p_{\theta}(x)-\text{KL}(q_{\phi}(z|x)||p_{\theta}(z|x))\)</div>
 
 <p>And:</p>
 
@@ -317,7 +319,7 @@ This allows us to take the gradient inside of the expectation to get:
 
 <div class="math">\(\nabla_{\phi}\mathbb{E}_{\epsilon}[f(g_{\phi}(\epsilon))]=\mathbb{E}_{\epsilon}[\nabla_{\phi}f(g_{\phi}(\epsilon))]=\mathbb{E}_{\epsilon}\left[\frac{\partial f}{\partial z}\frac{\partial g_{\phi}}{\partial\phi}\right]\)</div>
 
-<p>This is Pyro's prefered estimator whenever possible, however if you can not reparameterise (possibly due to discrete variables, combinatorial structures or stochastic control flow) then z is sampled directly from \(q_{\phi}\).
+<p>This is Pyro's preferred estimator whenever possible, however if you can not reparameterise (possibly due to discrete variables, combinatorial structures or stochastic control flow) then z is sampled directly from \(q_{\phi}\).
     When it can't be reparameterised Pyro uses the <a href="https://danmackinlay.name/notebook/score_function_estimator.html">score function estimator</a> which we will now derive:
 </p>
 
@@ -327,23 +329,66 @@ This allows us to take the gradient inside of the expectation to get:
     &=\mathbb{E}_{z\sim q_{\phi}(z|x)} f(z)\nabla_{\phi}q_{\phi}(z|x)\\
     \end{align}\)</div>
 
-<p>This allows us again to approximate via monte carlo like the approximation of loss earlier (we take samples and average to approximate expectation). There is still some variance in this estimator and Pyro uses some techniques to reduce it
-    but since this is a beginner tutorial I'll just briefly mention some of them. It accomplishes reduction of variance by learning or estimating baselines (subtracting a constant), minibatching, <a href="https://en.wikipedia.org/wiki/Rao%E2%80%93Blackwell_theorem">Rao-Blackwellization</a> and enumeration where
-    if a discrete variable has a small support (\(\sum_{z}q(z)f(z)\)) it will compute it exactly. It also splits the KL up into local and global (KL (global) plus sum of local KL's (the local KL's are the entropy term that splits)) where we assume that
-    \(q(z_{i})\) is approximately \(q_{\phi}(z_{i}|x_{i})\) which restricts the variational family and allows scaling as the number of variational parameters is now idependent of N, gradients from each data point update the same \(\phi\) and
-    learning signal aggregates across minibatches. Also worth mentioning is that Pyro offers support for MCMC methods (instead of SVI) and the splitting up of local KL's allows parallelism, variance reduction and Rao-Blackwellisation. Below I've made explict the global plus locals (the locals come from the Shannon entropy term in the ELBO):
+<p>Neither estimator is universally better; the choice is dictated by the structure of the model and the support of the latent variables.</p>
+
+<p>As before, we approximate the ELBO expectation using Monte Carlo sampling, drawing samples from the variational distribution and averaging to estimate the expectation. This estimator has variance, and Pyro implements several techniques to reduce it. Since this is a beginner tutorial, we only briefly mention them here: learned or estimated baselines, minibatching, Rao–Blackwellisation, and exact enumeration for discrete variables with small support.</p>
+
+<p>
+Before diving into these methods Rao–Blackwellisation refers to a general variance–reduction principle: if part of an estimator can be computed
+as a conditional expectation rather than sampled, then doing so produces an estimator with lower variance
+(<a href="https://en.wikipedia.org/wiki/Rao%E2%80%93Blackwell_theorem">Rao–Blackwell theorem</a>). In Pyro, this idea appears whenever random variables are analytically marginalised
+instead of sampled. Examples include enumerating discrete latent variables with small support, computing
+certain KL terms in closed form, and exploiting conditional independence via a primitive pyro.plate (discussed later) to enable
+exact summation or message passing. In all cases, Pyro replaces unnecessary sampling with exact expectations,
+resulting in more stable gradient estimates and faster convergence.
 </p>
+
+<p>Two distinct factorisations are important to keep in mind. First, when the model factorises over data points, the KL term can be written as a sum of per-data contributions. This allows minibatches to approximate gradients of the full KL, enabling scalable stochastic optimisation.</p>
+
+<p>Second, under a mean-field variational assumption, the variational distribution factorises over latent variables. This induces a decomposition of the KL into a global term and a sum of local terms, where the local KLs arise from the entropy of the local variational factors. This factorisation enables additional variance reduction via Rao–Blackwellisation, supports parallelism across nodes in the computational graph, and allows gradients from different data points to update shared global parameters.</p>
+
+<p>In particular, assuming the local variational factors are conditionally independent given the global variables restricts the variational family, but makes the number of variational parameters independent of the data set size. As a result, learning signals from minibatches aggregate to update the same global parameters.</p>
+
+<p>Finally, Pyro also supports MCMC-based inference as an alternative to SVI. Even in that setting, the separation into global and local structure remains useful, enabling parallelism and analytic marginalisation where possible. Below, we make this global–local decomposition explicit; the local terms arise from the Shannon entropy contribution in the ELBO.</p>
 
 <div class="math">\(KL(q(\theta)||p(\theta))+\sum_{i}\mathbb{E}_{q(\theta)}[KL(q(z_{i})||p(z_{i}|\theta))]\)</div>
 
-<p>Now we understand the basics of how Pyro works we can go through a few example uses of it. We'll start with training a simple classifier on a two dimensional subeset of
+<p>Now we understand the basics of how Pyro works we can go through a few example uses of it. We'll start with training a simple classifier on a two dimensional subset of
     the iris dataset. This example will allow us to to visualise how using bayesian methods we don't get clean classification lines but probability distributions over classes.
     We'll start by defining our model (\(P_{\theta}(x,z)\)) as a linear model conditioned on a subset of the iris data whose variables are assumed to be distributed according to the
-    standard normal distribution. Note here that pyro.sample() declares a random variable to be used in the probabilistic program, obs=y is our observed data and here this means no sampling occurs (we already know the iris classes) and
-    it adds \(\log p(y|...)\) to the ELBO. We also have .to_event(x) where 1 specifies a random vector, 2 a random matrix, etc. and pyro.plate tells pyro how to vectorise computations, rescale minibatches and reduce variance (this is how it safely performs all the variance reduction discussed before).
-    Finally we have pyro.param which declares deterministic optimisation parameters (variables to be optimised), which in our example are in the guide which mathematically is \(q_{\phi}(w,b)\) with
-    mean field approximation \(q(w,b)=q(w)q(b)\) where b and w are normal. So in one SVI step we run guide (sample \(w,b\sim q_{\phi}\)), then run model to compute \(\log p(w,b,y)\), we then
-    accumulate \(\log(w,b,y)-\log q(w,b)\), then estimate the gradient via Monte Carlo and finally update pyro.param's (in this case with PyTorch's Adam opstimiser).
+    standard normal distribution. In this example, the main Pyro primitives (and method) play the following roles:</p>
+
+<ul>
+  <li>
+    <code>pyro.sample()</code> declares a random variable in the probabilistic program. When an observation is
+    provided via obs=y, no sampling occurs because the labels are known (for example, the iris
+    classes). Instead, the corresponding log-likelihood term
+    \( \log p(y \mid \ldots) \) is added to the ELBO.
+  </li>
+  <li>
+    <code>.to_event(k)</code> specifies the event dimensionality of the distribution:
+    k=1 denotes a random vector, k=2 a random matrix, and so on.
+  </li>
+
+  <li>
+    <code>pyro.plate</code> encodes conditional independence structure and tells Pyro how to safely vectorise
+    computations, rescale minibatches, and reduce estimator variance. This is the mechanism through which
+    Pyro performs the variance reduction techniques discussed earlier while preserving correct gradients.
+  </li>
+
+  <li>
+    <code>pyro.param</code> declares deterministic optimisation parameters (that is, variables to be optimised).
+    In this example these parameters appear in the guide, which mathematically defines the variational
+    distribution \( q_{\phi}(w, b) \). Under a mean-field approximation this factorises as
+    \( q(w, b) = q(w)\,q(b) \), with both \( w \) and \( b \) modelled as Gaussian random variables.
+  </li>
+</ul>
+
+<p>
+In a single SVI step, we first run the guide to sample \( w, b \sim q_{\phi} \). We then run the model to compute
+\( \log p(w, b, y) \). The ELBO contribution \( \log p(w, b, y) - \log q(w, b) \) is accumulated, gradients are
+estimated via Monte Carlo sampling, and finally the parameters declared with pyro.param are
+updated using PyTorch’s Adam optimiser.
 </p>
 
 <pre><code class="language-python">
@@ -630,7 +675,9 @@ class Combiner(nn.Module):
 
 <p>For the guide we will learn a single parametric function \(f(X_{1:T})\) and internally work with a factorisation of the form \(q(z_{1:T}|x_{1:T})=q(z_{1}|x_{1:T})\prod_{t=2}^{T}q(z_{t}|z_{t-1},x_{t:T})\).
     Also note we set up our RNN to "consume" the observations from right to left as this makes our conditional distribution depend on two things, the latent \(z_{t-1}\) and the observations
-    \(x_{t:T}\) (current observation with all future observations). Note that the RNN is used only in the variational guide and does not appear in the generative model, ensuring that temporal dependencies are learned through the latent Markov structure rather than the observations themselves. This choice mirrors the conditional independence structure of the true posterior in a latent Markov model, where inference at time t depends on the current latent state and all future observations.
+    \(x_{t:T}\) (current observation with all future observations). Note that the RNN is used only in the variational guide and does not appear in the generative model, ensuring that temporal dependencies are learned through the latent Markov structure rather than the observations themselves.
+    This asymmetry is standard in variational inference: the guide may be more expressive than the model because it is only used to approximate the posterior.
+    This choice mirrors the conditional independence structure of the true posterior in a latent Markov model, where inference at time t depends on the current latent state and all future observations.
 </p>
 
 <pre><code class="language-python">
@@ -684,7 +731,7 @@ class DMM(nn.Module):
             z_prev = z_t
 </code></pre>
 
-<p>Then training the model as usual with SVI, albeit with the caveat that we use Adam with gradient clipping as our optimiser to avoid classic issues with training RNN's, we eventually end up with the following output:</p>
+<p>Then training the model as usual with SVI, albeit with the caveat that we use Adam with gradient clipping as our optimiser to avoid classic issues with training RNNs, we eventually end up with the following output:</p>
 
 <div style="text-align: center; margin-top: 40px;">
     <img src="sin.png" alt="RNN" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
