@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Group Actions and Minimum of Convex Functions</title>
+  <meta name="description" content="" />
+
+
+  <!-- Load MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- Load Plotly.js for graphing -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .math {
+      font-size: 1.2em;
+      background: #fff;
+      padding: 10px;
+      border-left: 4px solid #007acc;
+      margin: 20px 0;
+    }
+
+    .inputs {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    label {
+      margin-right: 10px;
+    }
+
+    #graph {
+      width: 100%;
+      height: 500px;
+    }
+
+    input {
+      width: 60px;
+    }
+
+    .nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff00;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px;
+  z-index: 1000;
+  /* Removed box-shadow (edge gradient) */
+}
+
+.nav-bar button {
+  background-color: rgba(255, 255, 255, 0);
+  color: #007acc;
+  border: none;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
+}
+
+.nav-bar button:last-child {
+  margin-right: 0;
+}
+
+.nav-bar button:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+code {
+  border-left: 4px solid #11cc00; /* Blue line */
+  padding-left: 12px;             /* Space between border and code */
+  display: block;                 /* Ensures it spans full width */
+  background-color: #f9f9f9;      /* Optional: code background */
+}
+  </style>
+
+  <!-- Highlight.js stylesheet (theme: GitHub) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+<!-- Highlight.js library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Initialize highlighting -->
+<script>hljs.highlightAll();</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://dom-sco.github.io/otherposts/groupactionsandminimumofconvexfunctions.html"
+  },
+  "headline": "SkillSprout",
+  "description": "Article on convex optimisation Application",
+  "author": {
+    "@type": "Person",
+    "name": "Dominic Scocchera"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Dom-Sco Tutorials",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://dom-sco.github.io/logo.png"
+    }
+  },
+  "datePublished": "2025-08-27",
+  "dateModified": "2025-08-27",
+  "image": "https://dom-sco.github.io/images/alphazero.png",
+  "keywords": [
+    "optimisation",
+    "grouptheory",
+    "convexity"
+  ]
+}
+</script>
+</head>
+<body>
+
+  <h1>Group Actions and Minimums of Convex Functions</h1>
+
+<p>In this short article we'll be going over a result from convex optimisation theory that shows that the minimums of convex functions occur exactly in the fixed point set of
+    groups that are G-invariant (symmetric functions). We'll show this result for both discrete and continous group actions.
+</p>
+
+<p>
+Let \(f:\mathbb{R}^n\to\mathbb{R}\) be convex, and let \(G\) be a finite group acting linearly on \(\mathbb{R}^n\) such that \(f(g \cdot x) = f(x)\) for all \(g\in G, x \in \mathbb{R}^n\). Define the group average of any point \(x\) as
+</p><div class="math">\[
+x_{\text{avg}} := \frac{1}{|G|}\sum_{g \in G} g \cdot x.
+\]
+</div>
+
+<p>
+Then:
+</p>
+<ul>
+<li>\(x_{\text{avg}}\) is fixed under the group action: \(h \cdot x_{\text{avg}} = x_{\text{avg}}\) for all \(h\in G\).</li>
+<li>By convexity and symmetry:</li>
+</ul>
+<div class="math">\[
+f(x_{\text{avg}}) = f\Big(\frac{1}{|G|}\sum_{g\in G} g \cdot x\Big) \le \frac{1}{|G|}\sum_{g\in G} f(g \cdot x) = f(x).
+\]</div>
+<p>Hence, there exists a global minimum of \(f\) in the fixed-point subspace:
+</p>
+    <div class="math">\[
+\text{Fix}(G) = \{ x : g\cdot x = x \ \forall g \in G \}.
+\]
+</div>
+
+<!--Entropy-->
+<p>
+For our first example we will derive a classic result of
+information theory. Let \(f(x_1,\dots,x_n) = -\sum_{i=1}^n x_i \log x_i\) (Shannon entropy), with the domain being the standard simplex
+</p><div class="math">\[
+\Delta^{n-1} := \{x_i \ge 0, \sum_{i=1}^n x_i = 1\}.
+\]</div>
+<p>The symmetric group \(S_n\) acts by permuting coordinates. By convexity of \(-\sum x_i \log x_i\) and symmetry, the maximum occurs at the fixed point
+</p><div class="math">\[
+x_1 = x_2 = \dots = x_n = \frac{1}{n}.
+\]
+</div>
+
+<p>So entropy is maximised by the uniform distribution.
+    Now we'll move onto the derivation of the continous version.
+</p>
+
+<p>
+Let \(f:\mathbb{R}^n \to \mathbb{R}\) be convex, and let \(G\) be a compact Lie group acting linearly on \(\mathbb{R}^n\) such that \(f(g \cdot x) = f(x)\) for all \(g \in G, x \in \mathbb{R}^n\). Let \(\mu\) be the Haar measure on \(G\) (normalized so \(\mu(G)=1\)). Define the group average
+</p><div class="math">\[
+x_{\text{avg}} := \int_G g \cdot x \, d\mu(g).
+\]
+</div>
+
+<p>
+Then:</p>
+<ul>
+<li>\(x_{\text{avg}}\) is fixed under the group: \(h \cdot x_{\text{avg}} = x_{\text{avg}}\) for all \(h \in G\), because the Haar measure is invariant (\(\mu(hS) = \mu(S)\)).</li>
+<li>By convexity and Jensen's inequality:</li>
+</ul>
+<div class="math">\[
+f(x_{\text{avg}}) = f\Big(\int_G g \cdot x \, d\mu(g)\Big) \le \int_G f(g \cdot x) \, d\mu(g) = f(x).
+\]</div>
+<p>Hence, a global minimum exists in the fixed-point subspace
+</p>
+<div class="math">\[
+\text{Fix}(G) = \{ x : g \cdot x = x \ \forall g \in G \}.
+\]
+</div>
+
+<!--Euclidean norm on ball-->
+The first really basic example is rotations on the n-dimensional ball. Let \(f:\mathbb{R}^n\to\mathbb{R}, f(x) = \|x\|^2\), with domain the n-dimensional ball \(B_r = \{x: \|x\| \le r\}\).  
+Group \(G = SO(n)\) acts by rotations. By convexity and rotational symmetry, the minimum occurs at the fixed point
+<div class="math">\[
+x = 0.
+\]</div>
+</div>
+
+<!--Log sum exp-->
+A common function used in machine learning is the log sum exponential. Let \(f(x_1,\dots,x_n) = \log\big(\sum_{i=1}^n e^{x_i}\big)\), with domain \(\{x_i \ge 0, \sum x_i = 1\}\).  
+This function is convex and symmetric under permutations of the variables, so the minimum occurs at
+<div class="math">\[
+x_1 = x_2 = \dots = x_n = \frac{1}{n}.
+\]
+</div>
+
+<!--Rotationally symmetric potential in central force systems-->
+<p>
+Our final example from physics is for a particle in a 3D Hookean potential. Let \(f:\mathbb{R}^3 \to \mathbb{R}\) be the potential energy of a particle in a central force field:
+</p><div class="math">\[
+f(\mathbf{x}) = V(\|\mathbf{x}\|), \quad \mathbf{x} \in B_r \subset \mathbb{R}^3,
+\]</div>
+where \(V\) is convex and radially symmetric (e.g., \(V(r)=kr^2\) for a harmonic oscillator).  
+The group \(G = SO(3)\) acts by rotations. By convexity and rotational symmetry, the minimum occurs at the fixed point
+<div class="math">\[
+\mathbf{x} = 0.
+\]
+</div>
+
+<p>As you can see in these cases it can make it quite trivial to figure out where the minimums are and lets us avoid using gradient based methods to find the optimal points.
+    Also important to note is that the opposite of this applies to concave functions where the inequalities are reversed so you can use it to find maximums. You can find some other
+interesting examples and further theory <a href="https://www.chenyang.co/symmetry.html">here</a>.</p>
+
+
+
+<!-- Bottom Navigation Bar -->
+<footer style="margin-top: 80px; padding: 30px 20px; text-align: center; font-size: 14px; color: #555;">
+  <div style="margin-bottom: 10px;">
+    <a href="../index.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Home</a> |
+    <a href="../otherposts.html" style="margin: 0 10px; color: #007acc; text-decoration: none;">Other Articles</a>
+  </div>
+  <div>© 2026 Dominic Scocchera. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
