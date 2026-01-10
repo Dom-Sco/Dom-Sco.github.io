@@ -443,7 +443,7 @@ for step in range(2000):
 </div>
 
 <p>In our next example we will solve a missing data problem, specifically MovieLens 100k which attempts to find missing entries in a ratings matrix \(R\in\mathbb{R}^{U\times M}\)( U is user by M movie).
-    We model each entry as \(R_{ij}\sim\mathcal{N}(u_{i}^{T}v_{j},\sigma^{2})\) where \(u_{i}\in\mathbb{R}^{K}\) are the user embeddings and \(v_{j}\in\mathbb{R}^{K}\) are tje movie embeddings (these are
+    We model each entry as \(R_{ij}\sim\mathcal{N}(u_{i}^{T}v_{j},\sigma^{2})\) where \(u_{i}\in\mathbb{R}^{K}\) are the user embeddings and \(v_{j}\in\mathbb{R}^{K}\) are the movie embeddings (these are
     our latents) with our priors being \(u_{i},v_{j}\sim\mathcal{N}(0,I)\) (this is what our model function will capture). Conceptually users have only rated certain movies and thus there are a lot of missing entries for each user.
     Now for our guide program our mean field approximation is \(q(U,V,\sigma)=\prod_{i}q(u_{i})\prod_{j}q(v_{j})q(\sigma)\) where \(q(\sigma)\) is a dirac delta as \(\sigma\) is a positive scalar controlling the noise in the likelihood 
     and a Delta distribution is equivalent to a maximum a posteriori estimate (learning a single optimal value for \(\sigma\)).
