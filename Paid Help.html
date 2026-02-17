@@ -78,15 +78,19 @@
       </p>
 
       <div class="w-full overflow-hidden rounded-xl shadow-lg border">
-        <!-- Google Calendar Booking Embed -->
-        <iframe
-          src="https://calendar.google.com/calendar/appointments/schedules/AcZssZ1jiWPb_KcX9dnHyBAX5K7jCDkfJzThf5odQwd7S-g5IqryZlgMcYnNNplRJFsh3hpHSDToOhFx?gv=true"
-          style="border:0"
-          width="100%"
-          height="800"
-          frameborder="0">
-        </iframe>
-      </div>
+      <iframe
+        id="bookingFrame"
+        style="border:0"
+        width="100%"
+        height="800"
+        frameborder="0">
+      </iframe>
+    </div>
+
+    <p id="referralNotice" class="mt-4 text-sm text-green-700 hidden">
+      Referral applied.
+    </p>
+
     </div>
   </section>
 
@@ -109,6 +113,35 @@
     once: true
   });
 </script>
+<script>
+  // ---- 1. Read referral from URL ----
+  const params = new URLSearchParams(window.location.search);
+  const refFromURL = params.get("ref");
 
+  // ---- 2. Save it if present ----
+  if (refFromURL) {
+    localStorage.setItem("referral_code", refFromURL);
+  }
+
+  // ---- 3. Retrieve saved referral ----
+  const savedRef = localStorage.getItem("referral_code");
+
+  // ---- 4. Build booking URL ----
+  const baseBookingURL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ1jiWPb_KcX9dnHyBAX5K7jCDkfJzThf5odQwd7S-g5IqryZlgMcYnNNplRJFsh3hpHSDToOhFx?gv=true";
+
+  let finalURL = baseBookingURL;
+
+  if (savedRef) {
+    finalURL += "&ref=" + encodeURIComponent(savedRef);
+
+    // show message to user
+    document.getElementById("referralNotice").classList.remove("hidden");
+    document.getElementById("referralNotice").innerText =
+      "Referral code " + savedRef + " applied.";
+  }
+
+  // ---- 5. Load iframe ----
+  document.getElementById("bookingFrame").src = finalURL;
+</script>
 </body>
 </html>
